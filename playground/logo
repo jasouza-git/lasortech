@@ -1,0 +1,199 @@
+#!/usr/bin/env -S deno run -A --watch
+import { serveFile } from "jsr:@std/http/file-server";
+
+const mult = (p:number[]) => [matrix[0]*p[0]+matrix[1]*p[1]+matrix[4], matrix[2]*p[0]+matrix[3]*p[1]+matrix[5]];
+const render = (vals:number[]):string => vals.map(x=>shape(0,x).map((y,n)=>(n?'':'M')+(y.length?`${mult(y)[0]} ${mult(y)[1]}`:'Z'+(n+1==shape().length?'':'M'))).join(' ')).join(';');
+const s = (v:number,a:number,b:number) => v < a ? 0 : v > b ? 1 : (v-a)/(b-a);
+
+
+/** Matrix Tranformation (x,y) => (ax+by+e, cx+dy+f) */
+const matrix = [8.25,2,0,-8.25,325,50];//8,74];
+/** Shape Rendering (Loading Animation 0-1, Title (0-1)) */
+const shape = (l:number=0, t:number=0) => {
+    const u = (S:number, E:number) => (E-S)*s(l,S/12,E/12);
+    const L:{[letter:string]:number[][]} = {
+        L: [
+            // BL
+            [-5+u(4,12),-3],
+            // TL
+            [-5+u(4,12),3-u(0,4)],
+            // TR
+            [-3+1.5*u(4,8),3-u(0,4)],
+            // ML
+            [-3+1.5*u(4,8),-1],
+            [1+u(2,4),-1],
+            // TO INNER TOP RIGHT
+            [1+u(2,4),-1+u(4,6)],
+            // TO BOTTOM OF TOP
+            [1+u(2,4)-u(8,12),-1+u(4,6)],
+            [1+u(2,4)-u(8,12),-1+u(4,8)],
+            [1+u(0,4),-1+u(4,8)],
+            // MR
+            [1+u(0,4),-1],
+            // BR
+            [1+u(0,4),-3],
+            [],
+        ],
+        A: [
+            [2,-3],
+            [2,3],
+            [8,3],
+            [8,-3],
+            [6,-3],
+            [6,-2],
+            [4,-2],
+            [4,0],
+            [6,0],
+            [6,1],
+            [4,1],
+            [4,-3],
+            [],
+        ],
+        S: [
+            [9,-3],
+            [9,-1],
+            [13,-1],
+            [13,-0.6],
+            [9,-0.6],
+            [9,3],
+            [15,3],
+            [15,1],
+            [11,1],
+            [11,0.6],
+            [15,0.6],
+            [15,-3],
+            [],
+        ],
+        O: [
+            [16,3],
+            [22,3],
+            [22,-3],
+            [16,-3],
+            [16,1],
+            [18,1],
+            [18,-1],
+            [20,-1],
+            [20,1],
+            [16,1],
+            [],
+        ],
+        R: [
+            [23,-3],
+            [23,3],
+            [29,3],
+            [29,-0.6],
+            [27,-0.6],
+            [29,-3],
+            [27,-3],
+            [25,-0.6],
+            [25,0.6],
+            [27,0.6],
+            [27,1],
+            [25,1],
+            [25,-3],
+            [],
+        ],
+        T: [
+            [5.5,3],
+            [9,3],
+            [9,1],
+            [5.5,1],
+            [],
+        ],
+        E: [
+            [10,3],
+            [10,-3],
+            [16,-3],
+            [16,-1],
+            [12,-1],
+            [12,-0.6],
+            [16,-0.6],
+            [16,0.6],
+            [12,0.6],
+            [12,1],
+            [16,1],
+            [16,3],
+            [10,3],
+            [],
+        ],
+        C: [
+            [17,3],
+            [23,3],
+            [23,1],
+            [19,1],
+            [19,-1],
+            [23,-1],
+            [23,-3],
+            [17,-3],
+            [],
+        ],
+        H: [
+            [24,3],
+            [26,3],
+            [26,0.6],
+            [28,0.6],
+            [28,3],
+            [30,3],
+            [30,-3],
+            [28,-3],
+            [28,-0.6],
+            [26,-0.6],
+            [26,-3],
+            [24,-3],
+            []
+        ]
+    }
+
+    return [
+        ...'LASOR'.split('').map(c=>L[c].map(x=>x.length?[x[0]-25*t,x[1]]:[])).flat(),
+        ...L.L.map(x=>x.length?[-x[0]+6*t, -x[1]]:[]),
+        ...'TECH'.split('').map(c=>L[c].map(x=>x.length?[x[0]+6*t,x[1]]:[])).flat(),
+    ];
+};
+const animation = {
+    'loading': [0],//, 4/12, 8/12, 12/12],
+    'title': [0,1,1,1,1],
+}
+
+
+Deno.serve(req => {
+    const path = new URL(req.url).pathname;
+    // Logo JPEG
+    if (path == '/logo.jpg') return serveFile(req, 'logo.jpg');
+    // Main Code
+    return new Response(/*html*/`
+        <!--<img style="position:absolute;left:0;top:0;width:100vmin;aspect-ratio:1/1;z-index:1;opacity:0.5" src="/logo.jpg" />-->
+        <svg id="logo" viewBox="0 0 650 100" style="position:absolute;left:0;top:0;width:100vmin;aspect-ratio:1/1;z-index:2;overflow:visible">
+            <defs>
+                <filter id="label_shadow">
+                    <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="extended" />
+
+                    <!-- White Shadow -->
+                    <feFlood flood-color="#fff" result="shw_0" />
+                    <feOffset in="extended" dx="0.5" dy="0.5" result="shw_1" />
+                    <feComposite operator="out" in="shw_0" in2="shw_1" />
+                    <feMorphology operator="dilate" radius="1" />
+                    <feGaussianBlur stdDeviation="1" result="shw_2" />
+
+                    <!-- Black Shadow -->
+                    <feFlood flood-color="#000" result="shb_0" />
+                    <feOffset in="extended" dx="-0.5" dy="-0.5" result="shb_1" />
+                    <feComposite operator="out" in="shb_0" in2="shb_1" />
+                    <feMorphology operator="dilate" radius="1" />
+                    <feGaussianBlur stdDeviation="1" result="shb_2" />
+
+                    <!-- Merging Shadow -->
+                    <feMerge>
+                        <feMergeNode in="shw_2" />
+                        <feMergeNode in="shb_2" />
+                    </feMerge>
+                    <feComposite operator="atop" in2="SourceGraphic" />
+                </filter>
+            </defs>
+            <path fill-rule="evenodd" stroke="red" stroke-width="0.4" fill="#FE0000" filter="url(#label_shadow)">
+                <!-- Loading Animation -->
+                <animate attributeName="d" values="${render(animation['title'])}" dur="9s" repeatCount="indefinite" />
+            </path>
+        </svg>
+    `, {status: 200, headers: { 'content-type':'text/html' }})
+});
