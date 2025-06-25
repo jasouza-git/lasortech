@@ -1,0 +1,87 @@
+#!/usr/bin/env -S deno run -A --watch
+/** # LasorTech Server
+  * The LasorTech server is the website for LasorTech to promote themselves online, it captures company details and 
+  * ### TODO
+  * - [ ] Responsive loading *(first loaded and next page loading)*
+  *   - [ ] Customizable logo entity *(Switch between default, loading, and title)*
+  * - [ ] Responsive browser history *(back button in mobiles and web navigation in browsers)*
+  * @module 
+  */
+import sass from 'https://deno.land/x/denosass@1.0.6/mod.ts';
+
+/** # HTML minifier */
+function html(strings:TemplateStringsArray, ...values:string[]):string {
+    return strings.reduce((out:string, str:string, n:number) => out + str.split('\n').map(x=>x.trim()).join('') + (values[n] ?? ''), '');
+}
+
+/** # Website Serve Content */
+export class Website {
+    constructor() {
+        this.server = Deno.serve(_req => {
+            return new Response(this.content, {
+                status: 200,
+                headers: { 'content-type':'text/html' },
+            });
+        });
+    }
+
+    /** Size of a single unit in pixels */
+    unit:number = 50;
+
+    /** Grainy texture */
+    grainy:string = 'data:image/svg+xml;base64,'+btoa(new TextEncoder().encode(html`
+        <svg xmlns="http://www.w3.org/2000/svg" width="500" height="500">
+            <filter id="noise" x="0" y="0">
+            <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+            <feBlend mode="screen"/>
+            </filter>
+            <rect width="500" height="500" filter="url(#noise)" opacity="0.5"/>
+        </svg>
+    `).reduce((acc, byte) => acc + String.fromCharCode(byte), ''));
+
+    /** Style of website *(SCSS)* */
+    style:string = /*css*/`
+        body {
+            background-color: #111;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            filter: contrast(170%) brightness(50%);
+            opacity: 0.5;
+            background-image:url(${this.grainy});
+            background-position: 0 0;
+            background-repeat: repeat;
+            background-size: 300px 300px;background-color:#11111f;
+            box-shadow: inset 0 0 ${this.unit}px #1115;
+        }
+    `;
+    
+    /** Content of website *(HTML)* */
+    content:string = html`
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <title>LasorTech</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, inital-scale=1.0">
+                <style>${sass(this.style).to_string() as string}</style>
+            </head>
+            <body>
+
+            </body>
+        </html>
+    `;
+
+    /** HTTP Server */
+    server:Deno.HttpServer<Deno.NetAddr>;
+}
+
+/** Main Code */
+if (import.meta.main) {
+    const _web = new Website();
+}
