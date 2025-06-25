@@ -8,6 +8,7 @@
   * @module 
   */
 import sass from 'https://deno.land/x/denosass@1.0.6/mod.ts';
+import { serveFile } from "jsr:@std/http/file-server";
 
 /** # HTML minifier */
 function html(strings:TemplateStringsArray, ...values:string[]):string {
@@ -17,7 +18,9 @@ function html(strings:TemplateStringsArray, ...values:string[]):string {
 /** # Website Serve Content */
 export class Website {
     constructor() {
-        this.server = Deno.serve(_req => {
+        this.server = Deno.serve(req => {
+            const path = new URL(req.url).pathname;
+            if (path == '/loading.svg') return serveFile(req, './graphic/loading.svg');
             return new Response(this.content, {
                 status: 200,
                 headers: { 'content-type':'text/html' },
@@ -72,7 +75,7 @@ export class Website {
                 <style>${sass(this.style).to_string() as string}</style>
             </head>
             <body>
-
+                <object type="image/svg+xml" data="/loading.svg" width="400" height="400"></object>
             </body>
         </html>
     `;
