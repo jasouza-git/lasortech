@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "puppeteer": "^24.10.2"
+  },
+  "devDependencies": {
+    "typedoc": "^0.28.5"
   }
 }
