@@ -1,5 +1,6 @@
 {
     "tasks": {
-        "doc": "deno doc --html lasortech && deno doc --json lasortech | deno eval 'let x=``, dec=new TextDecoder; for await (const c of Deno.stdin.readable) x+=dec.decode(c); const dat=JSON.parse(x); console.log(dat.nodes[0].jsDoc.doc)' > README.md"
+        "doc": "deno doc --html lasortech && deno doc --json lasortech | deno eval 'let x=``, dec=new TextDecoder; for await (const c of Deno.stdin.readable) x+=dec.decode(c); const dat=JSON.parse(x); console.log(dat.nodes[0].jsDoc.doc)' > README.md",
+        "logo": "./test/logo"
     }
 }
