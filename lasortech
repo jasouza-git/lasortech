@@ -72,7 +72,7 @@ export class Graphics {
     }
     render() {
         // Reset
-        this.defs = '';
+        this.gen.defs = '';
 
         // Process effects
         const effect_types:{[id:string]:'fill'|'filter'|'mask'} = {};
@@ -86,7 +86,7 @@ export class Graphics {
             /** Generates Filter DEF code from `filter` */
             const to_filter = (tmp?:boolean) => {
                 const id = tmp ? `t${this.prefix}${(filter_tmp_id++).toString(36)}` : `${this.prefix}${name}`;
-                this.defs += xml`<filter id="${id}">${filter}</filter>"`
+                this.gen.defs += xml`<filter id="${id}">${filter}</filter>"`
                 filter = '';
                 return id;
             };
@@ -95,7 +95,7 @@ export class Graphics {
                 // Linear Gradient
                 if (step[''] === 'gradient' && !type && 'stops' in step && step.stops) {
                     type = 'fill';
-                    this.defs += xml`<linearGradient id="${this.prefix}${name}"${step.transform ? ` gradientTransform="${step.transform}"` : ''}>
+                    this.gen.defs += xml`<linearGradient id="${this.prefix}${name}"${step.transform ? ` gradientTransform="${step.transform}"` : ''}>
                         ${step.stops.map((x,n,a)=>{
                             const offset = typeof x != 'string' ? x[1] : a.length != 1 ? 100*n/(a.length-1) : 0;
                             return xml`<stop offset="${offset}%" stop-color="${typeof x == 'string' ? x : x[0]}"/>`;
@@ -104,7 +104,7 @@ export class Graphics {
                 }
                 // Mask
                 else if (step[''] === 'mask' && type != 'fill' && 'from' in step && step.from) {
-                    this.defs += xml`<mask id="${this.prefix}${name}">
+                    this.gen.defs += xml`<mask id="${this.prefix}${name}">
                         <rect x="0" y="0" width="100%" height="100%" fill="${step.type == 'include' ? '#000' : '#fff'}"/>
                         <use href="#${this.prefix}${step.from}" fill="${step.type == 'include' ? '#fff' : '#000'}"${type == 'filter' ? ` filter="url(#${to_filter(true)})"`:''}/>
                     </mask>`;
@@ -137,7 +137,7 @@ export class Graphics {
             if (type != '') effect_types[name] = type;
             else throw new Error('Un-identified effect type');
         }
-        if (this.debug) console.log('\x1b[1;32mDEFINES\x1b[0m:', this.defs);
+        if (this.debug) console.log('\x1b[1;32mDEFINES\x1b[0m:', this.gen.defs);
 
         // Get Frames (this.frames)
         if (!this.frames.length) {
@@ -172,20 +172,50 @@ export class Graphics {
             }))
         );
         // Generate all the shape's code
-        const shapes = fshapes[0].map(shape => {
-            // Attributes
-            const attr = [
-                ...(shape.fill ? [`fill="${shape.fill}"`] : []),
-                ...(shape.stroke ? [`stroke="${shape.stroke}"`] : []),
-                ...(shape.effect??[]).reduce((a,x) => (
-                    x in effect_types ? [...a, {
-                        'fill': `fill="url(#${this.prefix}${x})"`,
-                        'filter': `filter="url(#${this.prefix}${x})"`,
-                        'mask': `mask="url(#${this.prefix}${x})"`
-                    }[effect_types[x]]] : a), [] as string[]
-                )
-            ].join(' ');
-            return attr;
+        const shapes = fshapes[0].map((shape, id) => {
+            /** Attributes */
+            const attr:{[name:string]:string} = {};
+            /** Animation path values */
+            const ani = (s:number, e:number) => this.frames
+                // Get only start to end frames
+                .slice(this.frames.indexOf(s), this.frames.indexOf(e)+1)
+                // Get paths and duration
+                .map((frame,_,arr) => [fshapes[this.frames.indexOf(frame)][id].code, 1/arr.length])
+                // Reduce repetitive values
+                .reduce((p,v) => !p.length || p[p.length-1][0] != v[0] ? [...p,v] : [
+                    ...p
+                ], [] as (string | number)[][])
+            ;
+            let anis:string = '';
+            // Fill
+            if (shape.fill) attr['fill'] = shape.fill;
+            // Stroke
+            if (shape.stroke) attr['stroke'] = shape.stroke;
+            // Effects
+            if (shape.effect) for (const effect of shape.effect) {
+                attr[effect_types[effect]] = `url(#${this.prefix}${effect})`;
+            }
+            // ID
+            if (shape.id) attr['id'] = this.prefix+shape.id;
+            // Subtractive fill
+            if (shape.code.split('z').length > 2) attr['fill-rule'] = 'evenodd';
+            // Default path
+            if (typeof this.animations.default == 'number') {
+                attr['d'] = fshapes[this.frames.indexOf(this.animations.default)][id].code;
+            }
+
+            // Get animations
+            for (const name in this.animations) {
+                const A = this.animations[name];
+                console.log('\x1b[1;32mANIMATE\x1b[0m', typeof A == 'number' ? ani(A,A) : ani(A.start, A.end));
+                /*anis += xml`
+                    <animate attributeName="d" values="${}"
+                `;*/
+            }
+            console.log(this.animations);
+
+
+            return {attr};
             // TODO GENERATE PATH, ANIMATES, ETC.
         })
         if (this.debug) console.log('\x1b[1;32mSHAPES:\x1b[0m', shapes);
@@ -204,11 +234,12 @@ export class Graphics {
     shape:(u:(a:number,b:number)=>number)=>{
         id?:string,
         fill?:string, stroke?:string,
+        opacity?:number,
         effect?:string[],
         debug?:boolean,
         path:number[][],
     }[] = _=>[];
-    /** Effects */
+    /** Effects like Filters, Masking, Gradients, etc. */
     effects:{[id:string]:(
         // Gradient
         {'':'gradient', transform?:string, stops?:(string|[string,number])[]} |
@@ -252,7 +283,7 @@ export class Graphics {
             {'': 'turbulence', type: 'turbulence'|'fractalNoise', baseFrequency: number, numOctaves?: number, seed?: number, stitchTiles?: 'stitch'|'noStitch'}
         ) & { in?: string; result?: string })
     )[]} = {};
-    /** Animations */
+    /** Animations of graphics based on frames */
     animations:{[id:string]:number|{
         start:number,
         end:number
@@ -262,12 +293,24 @@ export class Graphics {
     /** Prefix to prevent HTML ID conflicts */
     prefix:string = Math.random().toString(36).slice(2, 6)+'_';
     /* ----- GENERATED ----- */
+    /** Generated data */
+    private gen = {
+        defs: '',
+        cont: ''
+    };
     /** SVG Defineds */
-    defs:string = '';
+    get defs():string { 
+        return this.gen.defs;
+    }
     /** Recognized Frames */
     private frames:number[] = [];
     /** SVG Content */
-    svg:string = '';
+    svg(config:{defs?:boolean}={}):string {
+        const conf = {defs:true, ...config};
+        return xml`<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" viewBox="0 0 ${this.width} ${this.height}">
+            ${conf.defs ? xml`<defs>${this.gen.defs}</defs>` : ''}
+        </svg>`;
+    }
     /** Data URL */
     get data():string {
         return 'data:image/svg+xml;base64,'+btoa(new TextEncoder().encode(xml`
@@ -496,11 +539,15 @@ export class Website {
     
     /** Grainy replacement */
     grainy_new = new Graphics({
+        matrix: [250,0,0,250,0,0],
         width:500, height:500,
-        effects:{noise:[
+        effects:{ noise:[
             {'':'turbulence', type:'fractalNoise', baseFrequency:0.65, numOctaves:3, stitchTiles:'stitch'},
             {'':'blend', in2:'SourceGraphic', mode:'screen'},
         ]},
+        shape: _ => [ {effect:['noise'], path:[
+            [-250,-250,500,500],
+        ]}],
     }).data;
 
     /** Style of website *(SCSS)* */
@@ -544,7 +591,7 @@ export class Website {
                 <svg><defs>${this.logo.defs}</defs></svg>
             </head>
             <body>
-                ${this.logo.svg}
+                ${this.logo.svg({defs:false})}
                 <p>THIS IS JUST A CONCEPT</p>
             </body>
         </html>
