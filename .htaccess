@@ -1,0 +1,25 @@
+RewriteEngine On
+
+# Disable directory listing (better set in server config but also works here)
+Options -Indexes
+
+# 1. Redirect /api to /api.php
+RewriteCond %{REQUEST_URI} ^/api/?$
+RewriteRule ^api/?$ /api.php [L]
+
+# 2. Redirect /favicon.ico to /asset/favicon.ico
+RewriteRule ^favicon\.ico$ /asset/favicon.ico [L]
+
+# 3. For /user/* and /item/* if file or directory doesn't exist, serve asset/profile.jpeg
+#RewriteCond %{REQUEST_URI} ^/(user|item)/
+#RewriteCond %{REQUEST_FILENAME} !-f
+#RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteRule ^(user|item)/ asset/profile.jpg [L]
+
+# 4. Redirect if path is a directory to index.php (no directory listing)
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^.*$ /index.php [L]
+
+# 5. For all others, if file doesn't exist, serve index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .* /index.php [L]

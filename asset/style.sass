@@ -1,0 +1,403 @@
+// npx sass --watch --style compressed asset/style.sass style.css
+@use 'sass:color'
+$u: 75px
+$p: #e7504b
+$t: .25s
+
+/* ----- FONTS ----- */
+@font-face
+    font-family: 'FontAwesome'
+    src: url(/asset/fa-solid.ttf) format('truetype')
+    font-weight: normal
+    font-style: normal
+
+@font-face
+    font-family: 'LeagueSpartan'
+    src: url(/asset/LeagueSpartan.ttf) format('truetype')
+    font-weight: normal
+    font-style: normal
+
+/* ----- HTML ELEMENTS ----- */
+icon
+    font-family: FontAwesome
+:focus
+    outline: none
+*
+    box-sizing: border-box
+body, html
+    height: 100%
+body
+    margin: $u 0 0 3*$u
+    //display: grid
+    //grid-template-columns: 3*$u auto
+    //grid-template-rows: $u auto
+    font-family: LeagueSpartan
+    overflow: hidden
+    color: #fff
+    background-color: #111
+
+    &>div
+        transition: opacity $t $t
+    &::before
+        content: ''
+        position: fixed
+        left: 0
+        top: 0
+        width: 100%
+        height: 100%
+        filter: contrast(170%) brightness(50%)
+        opacity: 0.5
+        background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MDAiIGhlaWdodD0iNTAwIj48ZmlsdGVyIGlkPSJub2lzZSIgeD0iMCIgeT0iMCI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNjUiIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48ZmVCbGVuZCBpbjI9IlNvdXJjZUdyYXBoaWMiIG1vZGU9InNjcmVlbiIvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPSI1MDAiIGhlaWdodD0iNTAwIiBmaWx0ZXI9InVybCgjbm9pc2UpIiBvcGFjaXR5PSIwLjUiLz48L3N2Zz4=')
+        background-position: 0 0
+        background-repeat: repeat
+        background-size: 6*$u 6*$u
+        background-color:#11111f
+        box-shadow: inset 0 0 0.25*$u #1115
+        z-index: -2
+    &::after
+        content: ''
+        position: fixed
+        right: 0
+        bottom: 0
+        width: calc(100% - 3*$u)
+        height: calc(100% - $u)
+        background-color: #ddd
+        z-index: -1
+        border-radius: 0.25*$u 0 0 0
+        box-shadow: inset 0 0 0.25*$u #0005
+        transition: opacity $t $t
+
+/* ----- HEAD ----- */
+#head
+    position: fixed
+    right: 0
+    top: 0
+    width: calc(100% - 3*$u)
+    height: $u
+    display: grid
+    grid-template-columns: 2*$u auto
+    grid-template-rows: 1fr 1fr
+    z-index: 1
+    span
+        padding: 0 0.25*$u
+        line-height: 0.5*$u
+    h1
+        font-size: 0.5*$u
+        text-align: center
+        margin: 0
+        line-height: $u
+    #head_info0
+        grid-area: 1 / 1
+    #head_info1
+        grid-area: 2 / 1
+    #head_name
+        grid-area: 1 / 2 / span 2
+/* ----- SIDE ----- */
+#side
+    position: fixed
+    left: 0
+    top: $u
+    width: 3*$u
+    height: calc(100% - $u)
+    display: flex
+    flex-direction: column
+    grid-area: 2 / 1
+    padding: 0.1*$u
+    z-index: 2
+    p
+        font-weight: bold
+        font-size: 0.3*$u
+    button
+        font-size: 0.3*$u
+        border: 0.01*$u solid #555
+        margin: 0 0.1*$u
+        background-color: #5550
+        color: #aaa
+        font-size: 0.25*$u
+        line-height: 0.5*$u
+        transition: background-color $t
+        &+button
+            border-top-width: 0
+        &:hover
+            background-color: #5556
+    p+button
+        border-radius: 0.1*$u 0.1*$u 0 0
+    button:has(+ p), button:last-child
+        border-radius: 0 0 0.1*$u 0.1*$u
+
+/* ---- LOGO ----- */
+#logo
+    position: fixed
+    left: 0
+    top: 0
+    width: 3*$u
+    height: $u
+    z-index: 3
+    transition: width $t, height $t
+
+/* ---- BODY ----- */
+#body
+    display: flex
+    flex-direction: column
+    color: #000
+    transition: opacity $t 2*$t
+
+/* ----- FIND ----- */
+#find
+    position: sticky
+    top: $u
+    display: grid
+    grid-template-columns: 1fr 1fr 1fr 1fr 0.5*$u
+    grid-template-rows: 0.6*$u 1.5*$u
+    padding: 0.25*$u
+    padding-bottom: 0.25*$u
+    background-color: #eee
+    box-shadow: 0 0.1*$u 0.1*$u -0.1*$u #aaa
+    border-radius: 0.2*$u 0 0.2*$u 0.2*$u
+    margin-bottom: 0.1*$u
+    z-index: 1
+    &>input
+        grid-area: 1 / 1 / span 1 / span 5
+        height: 0.5*$u
+        border: 0.01*$u solid #aaa
+        border-radius: 0.1*$u 0.1*$u 0 0
+        padding: 0.125*$u
+        font-size: 0.25*$u
+    &>div
+        display: flex
+        flex-direction: column
+        border: 0.01*$u solid #aaa
+        //margin: 0 0.1*$u
+        input
+            width: 0.25*$u
+            height: 0.25*$u
+            margin: 0.125*$u
+        label
+            line-height: 0.5*$u
+            flex-grow: 1
+        &>div
+            display: flex
+            height: 0.5*$u
+            &:not(:first-child)
+                margin-left: 0.25*$u
+        &+div
+            margin-left: 0.1*$u
+        &:has(+ button)
+            margin-right: 0.1*$u
+    #find_orders
+        grid-area: 2 / 1
+        border-radius: 0 0 0 0.1*$u
+    #find_customers
+        grid-area: 2 / 2
+    #find_items
+        grid-area: 2 / 3
+    #find_employees
+        grid-area: 2 / 4
+    #search
+        grid-area: 1 / 5
+        margin-bottom: 0.1*$u
+        border: 0
+        background: none
+        &::after
+            content: '\f002'
+            font-family: FontAwesome
+            font-size: 0.25*$u
+    #new
+        grid-area: 2 / 5
+        background: #333
+        border-radius: 0 0 0.1*$u 0
+        color: #fff
+        &::after
+            content: '+'
+            font-family: FontAwesome
+            font-size: 0.25*$u
+        &:active
+            background: #222
+            &::after
+                color: #aaa
+
+#page
+    z-index: 0
+
+/* ----- BOTTOM TABS ----- */
+#tabs
+    position: fixed
+    right: 0
+    bottom: 0
+    width: calc(100% - 3*$u)
+    height: 0.75*$u
+    display: flex
+    padding: 0.1*$u
+    justify-content: center
+    button
+        border-radius: 0.55*$u
+        min-width: 0.55*$u
+        border: 0.01*$u solid #555
+        background: none
+        color: #555
+        &+button
+            margin-left: 0.1*$u
+        &.more
+            width: 1.1*$u
+            &::after
+                content: '\f141'
+                font-family: FontAwesome
+                font-size: 0.25*$u
+                color: #555
+    div
+        border-radius: 0.55*$u
+        border: 0.01*$u solid #555
+        color: #555
+        line-height: 0.55*$u
+        width: 1.65*$u
+        text-align: center
+        padding-right: $u
+    button + div
+        position: relative
+        margin-left: 0.4*$u
+        &::before
+            content: ''
+            position: absolute
+            left: -0.2*$u
+            top: 0
+            height: 0.55*$u
+            border-left: 0.01*$u solid #555
+        &::after
+            content: 'per page'
+            position: absolute
+            left: 0.55*$u
+            top: -0.02*$u
+            width: 1.1*$u
+            height: calc(100% + 0.01*$u)
+            border: 0.01*$u solid #555
+            background-color: #ccc
+            border-radius: 0 0.55*$u 0.55*$u 0
+ 
+.card
+    display: grid
+    grid-template-columns: auto 5*$u
+    grid-template-rows: auto 0.5*$u
+    margin: 0.25*$u
+    height: 4*$u
+    border: 0.01*$u solid #555
+    border-radius: 0.1*$u
+    overflow: hidden
+    background-color: #aaa
+    /* ORDER */
+    &>div:nth-child(1)
+        display: grid
+        grid-template-columns: auto auto
+        grid-template-rows: 0.75*$u auto auto
+        grid-area: 1 / 1
+        background-color: #ddd
+        box-shadow: 0 0 0.1*$u #333
+        border-radius: 0 0 0.1*$u 0
+        overflow: hidden
+        z-index: 1
+        h1, h2
+            margin: 0
+            padding: 0 0.2*$u
+            font-size: 0.25*$u
+            line-height: 0.75*$u
+            white-space: nowrap
+        h1
+            grid-area: 1 / 1
+        h2
+            grid-area: 1 / 2
+            text-align: right
+        div
+            position: relative
+            grid-area: 2 / 1 / span 1 / span 2
+            overflow: auto
+            padding: 0 0.2*$u
+            mask-image: linear-gradient(to bottom, black calc(100% - 0.1*$u), transparent 100%)
+            -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 0.1*$u), transparent 100%)
+            table
+                width: 100%
+                border-collapse: collapse
+                th
+                    position: sticky
+                    top: 0
+                    background-color: #777
+                    color: #fff
+                    z-index: 0
+                th, td
+                    border: 0.01*$u solid #555
+                    padding: 0.05*$u
+                    height: 0.3*$u
+        p
+            grid-area: 3 / 1 / span 1 / span 2
+            text-align: center
+            padding: 0.1*$u
+    /* CUSTOMER */
+    &>div:nth-child(2)
+        display: grid
+        grid-template-columns: auto
+        grid-template-rows: 0.75*$u auto 0.5*$u 0.5*$u
+        grid-area: 1 / 2
+        z-index: 0
+        h1
+            grid-area: 1 / 1
+            margin: 0
+            padding: 0 0.2*$u
+            font-size: 0.25*$u
+            line-height: 0.75*$u
+            white-space: nowrap
+        p
+            grid-area: 2 / 1
+            padding: 0.1*$u
+        a
+            padding: 0 0.1*$u
+            &::before, &::after
+                display: inline-block
+                font-family: 'FontAwesome'
+                width: 0.5*$u
+                text-align: center
+            &.fb
+                grid-area: 3 / 1
+                &::before
+                    content: '\f09a'
+            &.cn
+                grid-area: 3 / 1
+                text-align: right
+                &::after
+                    content: '\f095'
+            &.em
+                grid-area: 4 / 1
+                text-align: right
+                &::after
+                    content: '\f0e0'
+    /* INFO */
+    &>div:nth-child(3)
+        display: grid
+        grid-template-columns: 0.5*$u auto
+        grid-template-rows: 100%
+        grid-area: 2 / 1 / span 1 / span 2
+        background-color: #555
+        z-index: 0
+        div
+            grid-area: 1 / 1
+            background-color: #a11
+            margin: 0.15*$u
+            border: 0.01*$u solid #333
+            border-radius: 50%
+        p, h1
+            margin: 0
+            padding: 0 0.2*$u
+            font-size: 0.25*$u
+            line-height: 0.5*$u
+            white-space: nowrap
+            color: #fff
+        p
+            grid-area: 1 / 2
+        h1
+            grid-area: 1 / 2
+            text-align: right
+
+/* ----- BEFORE LOADED ----- */
+body.load
+    &>div, &::after
+        opacity: 0
+    #logo
+        width: 100%
+        height: 100%
