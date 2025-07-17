@@ -1,7 +1,6 @@
 <?php
-
 class DB {
-    protected $conn;
+    public $conn;
 
     /**
      * connect to the database, if $connection is provided, then use it instead
@@ -30,6 +29,7 @@ class DB {
 
             $need_init = false;
             foreach ([
+                "users",
                 "employees",
                 "customers",
                 "items",
