@@ -37,7 +37,7 @@ $config = (object)[
 <html>
     <head>
         <title>LasorTech RMA</title>
-        <link rel="stylesheet" type="text/css" href="style.css">
+        <link rel="stylesheet" type="text/css" href="/style.css">
     </head>
     <body class="load">
         <?php echo file_get_contents('logo.xml') ?>
@@ -169,6 +169,7 @@ $config = (object)[
         <?php echo file_get_contents('logo2.xml') ?>
         <div id="tabs">
             <?php
+            /*
                 echo '<button class="on">1</button>';
                 for ($n = 2; $n < 5; $n++) {
                     echo '<button>' . $n . '</button>';
@@ -177,9 +178,35 @@ $config = (object)[
                 for ($n = 24; $n < 29; $n++) {
                     echo '<button>' . $n . '</button>';
                 }
-                echo '<div contenteditable="true">10</div>'
+                echo '<div contenteditable="true">10</div>'*/
             ?>
         </div>
-        <script src="script.js"></script>
+        <div id="login">
+            <div id="login_forgot">
+                <h1><icon>&#xf0e0;</icon>E-Mail</h1><input id="login_forgot_email"></input>
+                <button>Send Verification Code</button>
+            </div>
+            <div class="signup">
+                <h1><icon>&#xf507;</icon>Name</h1><input name="name"></input>
+                <h1><icon>&#xf2bb;</icon>Contact Number</h1><input name="contact"></input>
+                <h1><icon>&#xf0e0;</icon>E-Mail</h1><input name="email"></input>
+                <h1><icon>&#xf084;</icon>Password</h1><input name="pass" type="password"></input>
+                <h1><icon>&#xf084;</icon>Password (Repeat)</h1><input name="pass2" type="password"></input>
+                <button onclick="action['signup']()">Signup</button>
+                <p></p>
+            </div>
+            <div class="login on">
+                <h1><icon>&#xf0e0;</icon>E-Mail</h1><input name="email"></input>
+                <h1><icon>&#xf084;</icon>Password</h1><input name="pass" type="password"></input>
+                <button onclick="action['login']()">Login</button>
+                <p></p>
+            </div>
+            <div>
+                <button><icon>&#xe243;</icon>Forgot Password</button>
+                <button><icon>&#xf234;</icon>Signup</button>
+                <button class="on"><icon>&#xf2f6;</icon>Login</button>
+            </div>
+        </div>
+        <script src="/script.js"></script>
     </body>
 </html>

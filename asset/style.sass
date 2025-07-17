@@ -146,7 +146,7 @@ body::before, #head::after
     width: 3*$u
     height: $u
     z-index: 3
-    transition: width $t, height $t
+    transition: $t
 
 /* ---- BODY ----- */
 #body
@@ -230,10 +230,14 @@ body::before, #head::after
             content: '+'
             font-family: FontAwesome
             font-size: 0.25*$u
-        &:active
+        &:not([disabled]):active
             background: #222
             &::after
                 color: #aaa
+        &[disabled]
+            background: none
+            color: #555
+            border-color: #aaa
 
 /* ----- TABLE ----- */
 table
@@ -373,7 +377,8 @@ table
             border: 0.01*$u solid #555
             background-color: #ccc
             border-radius: 0 0.55*$u 0.55*$u 0
- 
+
+/* ----- COMPONENTS ----- */
 .card
     display: grid
     grid-template-columns: auto 5*$u
@@ -406,7 +411,7 @@ table
         h2
             grid-area: 1 / 2
             text-align: right
-        div
+        &>div
             position: relative
             grid-area: 2 / 1 / span 1 / span 2
             overflow: auto
@@ -485,10 +490,100 @@ table
         .edit
             display: none
 
+/* ----- LOGIN/SIGNUP ----- */
+#login
+    position: fixed
+    left: calc(50% - 50vmin + $u)
+    bottom: $u
+    width: calc(100vmin - 2*$u)
+    height: calc(75% - 2*$u)
+    background-color: #ddd
+    border-radius: 0.25*$u
+    box-shadow: inset 0 0 0.25*$u #0005
+    display: grid
+    grid-template-columns: auto
+    grid-template-rows: auto 0.5*$u
+    pointer-events: none
+    opacity: 0
+    div:not(:last-child)
+        grid-area: 1 / 1
+        display: flex
+        flex-direction: column
+        opacity: 0
+        transition: opacity $t
+        pointer-events: none
+        overflow: auto
+        padding: 0.2*$u 0
+        &.on
+            opacity: 1
+        h1
+            margin: 0
+            line-height: 0.5*$u
+            font-size: 0.35*$u
+            color: #333
+            icon
+                display: inline-block
+                width: $u
+                text-align: center
+        input
+            margin: 0 0.2*$u
+            font-size: 0.25*$u
+            padding: 0.05*$u
+            border-radius: 0.1*$u
+            background-color: #fff
+            border: 0.01*$u solid #555
+        button
+            margin: 0.2*$u
+            font-size: 0.25*$u
+            padding: 0.1*$u
+            border-radius: 0.1*$u
+            background-color: #333
+            color: #fff
+            &:active
+                background: #222
+                &::after
+                    color: #aaa
+    div:last-child
+        grid-area: 2 / 1
+        display: flex
+        border-radius: 0 0 0.25*$u 0.25*$u
+        button
+            background-color: #555
+            box-shadow: inset 0 0 0.25*$u #0005
+            font-size: 0.25*$u
+            font-weight: bold
+            border: 0
+            flex-grow: 1
+            color: #fff
+            height: 0.5*$u
+            transition: background-color $t, box-shadow $t, color $t
+            &+button
+                border-left: 0.01*$u solid #333
+            &:hover
+                background-color: #555d
+            &:active
+                background-color: #333
+            &:first-child
+                border-radius: 0 0 0 0.25*$u
+            &:last-child
+                border-radius: 0 0 0.25*$u 0
+            icon
+                display: inline-block
+                width: 0.5*$u
+                text-align: center
+            &.on
+                background: none
+                box-shadow: inset 0 0 0 #0005
+                color: #333
+            
+            
+
 /* ----- BEFORE LOADED ----- */
 body.load
+    overflow: hidden
     &>div, &::after
         opacity: 0
+        pointer-events: none
     #logo
         width: 100%
         height: 100%
@@ -496,3 +591,13 @@ body:not(.load).loading
     #loader
         opacity: 1
         pointer-events: auto
+body.login
+    #logo
+        left: calc(50% - 50vmin)
+        width: 100vmin
+        height: 25%
+    #login
+        opacity: 1
+        pointer-events: auto
+        &>div:not(:last-child).on
+            pointer-events: auto

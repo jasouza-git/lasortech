@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "system",
+    "lib": ["DOM", "ES2017"],
+    "outFile": "script.js",
+    "strict": false,
+    "esModuleInterop": true,
+    "moduleResolution": "classic"
+  },
+  "include": [
+    "asset/script.ts"
+  ]
+}
