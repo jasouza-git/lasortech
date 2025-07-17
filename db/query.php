@@ -392,4 +392,89 @@ class DB_QUERY extends DB {
         return $res;
     }
 
+    public function get_orders_detail(array $data) {
+        $paras = parameter([
+            "ids" => "string[]"
+        ], $data);
+
+        $ids = $paras["ids"];
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $types = str_repeat('s', count($ids));
+
+        $sql = <<<SQL
+        SELECT 
+            o.id AS order_id,
+            o.rms_code,
+            o.description AS order_description,
+            c.name AS customer_name,
+            c.contact_number AS customer_contact_number,
+            c.email AS customer_email,
+            i.id AS item_id,
+            i.brand,
+            i.model,
+            i.serial AS item_serial,
+            i.name AS item_name,
+            p.id AS state_id,
+            p.state_code,
+            p.update_at
+        FROM orders o
+        JOIN order_item_map oim ON o.id = oim.order_id
+        JOIN items i ON oim.item_id = i.id
+        JOIN customers c ON i.belonged_customer_id = c.id
+        LEFT JOIN (
+            SELECT p1.*
+            FROM procedures p1
+            INNER JOIN (
+                SELECT order_id, MAX(update_at) AS latest_update_at
+                FROM procedures
+                GROUP BY order_id
+            ) p2
+            ON p1.order_id = p2.order_id AND p1.update_at = p2.latest_update_at
+        ) p ON o.id = p.order_id
+        WHERE o.id IN ($placeholders)
+        SQL;
+
+        $res = $this->fetch([
+            "sql" => $sql,
+            "values" => $ids,
+            "types" => $types
+        ]);
+
+        $out = [];
+        foreach ($res as $row) {
+            $order_id = $row["order_id"];
+
+            if (!isset($out[$order_id])) {
+
+                $state_data = $this->get_states([
+                    "ids" => [$row['state_id']]
+                ])[0];
+
+                $out[$order_id] = [
+                    "id" => $row["order_id"],
+                    "rms_code" => $row["rms_code"],
+                    "description" => $row["order_description"],
+                    "state_code" => $row["state_code"],
+                    "state" => $state_data,
+                    "update_at" => $row["update_at"],
+                    "customer" => [
+                        "name" => $row["customer_name"],
+                        "email" => $row["customer_email"],
+                        "contact_number" => $row["customer_contact_number"]
+                    ],
+                    "items" => []
+                ];
+            }
+            
+            $out[$order_id]["items"][] = [
+                "id" => $row["item_id"],
+                "brand" => $row["brand"],
+                "model" => $row["model"],
+                "serial" => $row["item_serial"],
+                "name" => $row["item_name"]
+            ];
+        }
+
+        return array_values($out);
+    }
 }

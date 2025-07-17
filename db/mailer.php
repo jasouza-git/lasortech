@@ -1,0 +1,131 @@
+<?php
+require 'vendor/autoload.php';
+require_once "basic.php";
+require_once "query.php";
+use \Mailjet\Resources;
+
+class Mailer {
+
+    private $client;
+    private $query;
+
+    public function __construct($conn) {
+        $this->client = new \Mailjet\Client(
+            "86d35d141a54c2e7404c0d83de36e1bb", 
+            "72f7d727f47dc29bde660a8e842cf01e",
+            true,
+            ['version' => 'v3.1']
+        );
+
+        $this->query = new DB_QUERY($conn);
+    }
+
+    public function send_order(array $data) {
+
+        $paras = parameter([
+            "id" => "string",
+            "message?" => "string"
+        ], $data);
+
+        $order_id = $paras['id'];
+        $message = $paras['message'] ?? null;
+
+        global $state_appearences;
+
+        $orders = $this->query->get_orders_detail([
+            "ids" => [$order_id]
+        ]);
+
+        required(count($orders) == 1, 100, "order mail cannot send, because order id not valid");
+
+        $order = $orders[0];
+
+        $item_rows = "";
+        foreach ($order['items'] as $i => $item) {
+            $index = $i + 1;
+            $name = $item['name'] ?? "N/A";
+            $brand = $item['brand'] ?? "N/A";
+            $model = $item["model"] ?? "N/A";
+            $serial = $item['serial'];
+
+            $item_rows .= <<<ROW
+            <tr>
+                <th>$index</th>
+                <th>$name</th>
+                <th>$brand</th>
+                <th>$model</th>
+                <th>$serial</th>
+            </tr>
+            ROW;
+        }
+
+        $msg = "";
+        if ($message) {
+            $msg = <<<MSG
+            <div class="section">
+                <h2>Message from Staff</h2>
+                <p>$message<p>
+            </div>
+            MSG;
+        }
+
+        $replacing = [
+            "{{customer_name}}" => $order['customer']['name'],
+            "{{customer_email}}" => $order['customer']['email'],
+            "{{order_id}}" => substr($order['id'], 0, 20),
+            "{{order_rms}}" => $order['rms_code'],
+            "{{order_status}}" => $state_appearences[$order['state_code']][0],
+            "{{state_color}}" => $state_appearences[$order['state_code']][1],
+            "{{last_update}}" => $order['update_at'],
+            "{{items_rows}}" => $item_rows,
+            "{{message}}" => $msg
+        ];
+
+        $mail_html = file_get_contents(__DIR__ . "/email.html");
+
+        foreach ($replacing as $key => $value) {
+            $mail_html = str_replace($key, $value, $mail_html);
+        }
+
+        // echo $mail_html;
+
+        return $this->send(
+            $order['customer']['email'],
+            $order['customer']['name'],
+            "We're Working on Your Device - Here's the Latest",
+            $mail_html
+        );
+    }
+
+    public function send(string $to, string $to_name, string $subject, $body) {
+        $body = [
+            'Messages' => [
+                [
+                    'From' => [
+                        'Email' => "wangchenlin2001@gmail.com",
+                        'Name' => "Lasortech"
+                    ],
+                    'To' => [
+                        [
+                            'Email' => $to,
+                            'Name' => $to_name
+                        ]
+                    ],
+                    'Subject' => $subject,
+                    'HTMLPart' => $body
+                ]
+            ]
+        ];
+        $response = $this->client->post(Resources::$Email, ['body' => $body]);
+        if (!$response->success()) {
+            $errorInfo = [
+                'status' => $response->getStatus(),
+                'reason' => $response->getReasonPhrase(),
+                'body' => $response->getBody()
+            ];
+            required(false, 30, $errorInfo);
+        }
+
+        return true;
+    }
+}
