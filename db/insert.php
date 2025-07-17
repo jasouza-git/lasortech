@@ -205,6 +205,13 @@ class DB_INSERT extends DB {
             $this->insert($c, true);
         }
 
+        $state_combined = build_insert_sql([
+            "order_id" => $combined["returning_new_id"],
+            "state_code" => 0
+        ], "procedures");
+
+        $this->insert($state_combined);
+
         $items = $this->fetch([
             "sql" => <<<SQL
                 SELECT i.*

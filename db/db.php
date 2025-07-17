@@ -135,40 +135,69 @@ class DB {
         return $prepare;
     }
 
-    protected $state_map = [
-        null,
-        [   
-            "state_processings",
-            [
-                "employee_id" => "string",
-                "reason?" => "string"
-            ]
-        ],
-        null,
-        null,
-        [
-            "state_incompletes",
-            [
-                "reason?" => "string"
-            ]
-        ],
-        [   
-            "state_user_cancels",
-            [
-                "reason?" => "string"
-            ]
-        ],
-        null,
-        [   
-            "state_payments",
-            [
-                "amount" => "real"
-            ]
-        ]
-    ];
-
     protected function get_state_map(int $index) {
+        global $state_map;
         required($index >= 0 && $index <= 7, 9, "state code not valid");
-        return $this->state_map[$index];
+        return $state_map[$index];
     }
 }
+
+$state_map = [
+    null,
+    [   
+        "state_processings",
+        [
+            "employee_id" => "string",
+            "reason?" => "string"
+        ]
+    ],
+    null,
+    null,
+    [
+        "state_incompletes",
+        [
+            "reason?" => "string"
+        ]
+    ],
+    [   
+        "state_user_cancels",
+        [
+            "reason?" => "string"
+        ]
+    ],
+    null,
+    [   
+        "state_payments",
+        [
+            "amount" => "real"
+        ]
+    ]
+];
+
+$state_appearences = [
+    [
+        "waitting",
+        "#0000FF",
+    ], [
+        "processing",
+        "#FFFF67",
+    ], [
+        "done",
+        "#75FCFD",
+    ], [
+        "finished",
+        "#75FC4C",
+    ], [
+        "incomplete",
+        "#F19937"
+    ], [
+        "user cancelled",
+        "#FF0000"
+    ], [
+        "refunded",
+        "#FF00FF"
+    ], [
+        "paid",
+        "#8EFA00"
+    ]
+];

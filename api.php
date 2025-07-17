@@ -9,6 +9,7 @@ require_once "db/query.php";
 require_once "db/update.php";
 require_once "db/delete.php";
 require_once "db/auth.php";
+require_once "db/mailer.php";
 
 $out = (object) [ "errno" => 0 ];
 
@@ -73,6 +74,7 @@ if (isset($_POST["action"])) {
         $db = new DB_QUERY($db->conn);
         $res = match ($get) {
             'current'       => $db->get_current($_POST),
+            'order_detail'  => $db->get_orders_detail($_POST),
             'employee'      => $db->get_employees($_POST),
             'item'          => $db->get($_POST, "items"),
             'customer'      => $db->get($_POST, "customers"),
@@ -93,6 +95,16 @@ if (isset($_POST["action"])) {
             'orders'        => $db->delete($_POST, "orders"),
             'states'        => $db->delete($_POST, "procedures"),
             default         => null,
+        };
+
+        $out->data = $res;
+    } else if (isset($_POST["email"])) {
+        $paras = $_POST["email"];
+        $db = new Mailer($db->conn);
+        
+        $res = match ($paras) {
+            'order'         => $db->send_order($_POST),
+            default         => null
         };
 
         $out->data = $res;

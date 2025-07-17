@@ -28,7 +28,7 @@ function parameter(array $required, array $values) {
     return $res;
 }
 
-function required($value, int $code, string $reason = null) {
+function required($value, int $code, $reason = null) {
     if (!$value) { 
         global $out;
         $out->errno = $code;
