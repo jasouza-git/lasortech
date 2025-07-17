@@ -229,4 +229,29 @@ class DB_INSERT extends DB {
 
         return $res;
     }
+
+    /**
+     * @param array $data:
+     *      - ids: string[]
+     *      - order_id: string
+     * @return bool
+     */
+    public function items_into_order(array $data) {
+        $items = parameter([
+            "ids" => "string[]",
+            "order_id" => "string"
+        ], $data);
+
+        $this->conn->begin_transaction();
+        foreach ($items['ids'] as $id) {
+            $combined = build_insert_sql([
+                "order_id" => $items['order_id'],
+                "item_id" => $id
+            ], "order_item_map", "order_id");
+
+            $this->insert($combined, true);
+        }
+        $this->conn->commit();
+        return true;
+    }
 }
