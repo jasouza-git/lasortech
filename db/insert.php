@@ -1,7 +1,38 @@
 <?php
-require_once __DIR__ . "/basic.php";
+require_once "basic.php";
 require_once "db.php";
 class DB_INSERT extends DB {
+
+    /**
+     * @param array $data:
+     *      - password_hashed: string
+     * 
+     * @return array:
+     *      - id: string
+     */
+    public function user(array $data) {
+        $user = parameter([
+            "email" => "string",
+            "password_hashed" => "string"
+        ], $data);
+        $combined = build_insert_sql($user, "users");
+        return $this->insert($combined);
+    }
+
+    /**
+     * @param array $data:
+     *      - user_id: string
+     * 
+     * @return array:
+     *      - id: string
+     */
+    public function session(array $data) {
+        $session = parameter([
+            "user_id" => "string"
+        ], $data);
+        $combined = build_insert_sql($session, "sessions");
+        return $this->insert($combined);
+    }
 
     /**
      * @param array $data:
@@ -23,14 +54,14 @@ class DB_INSERT extends DB {
      */
     public function employee(array $data) {
         $employee = parameter([
+            "id" => "string",
             "name" => "string",
             "contact_number" => "string",
-            "email" => "string",
             "messenger_id?"=> "string",
             "description?" => "string",
             "working" => "bool"
         ], $data);
-        $combined = build_insert_sql($employee, "employees");
+        $combined = build_insert_sql($employee, "employees", "id");
         $res = $this->insert($combined);
         $res["working"] = (bool)$res["working"];
         return $res;

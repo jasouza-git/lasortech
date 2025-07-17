@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/basic.php";
+require_once "basic.php";
 require_once "db.php";
 class DB_QUERY extends DB {
 
@@ -291,7 +291,9 @@ class DB_QUERY extends DB {
         foreach ($states as &$state) {
             $config = $this->get_state_map($state['state_code']);
             if ($config) {
-                $r = $this->get([$state['id']], $config[0], "state_id", false)[0];
+                $r = $this->get([
+                    "ids" => $state['id']
+                ], $config[0], "state_id", false)[0];
                 foreach ($config[1] as $field => $_) {
                     if (str_ends_with( $field, "?")) {
                         $field = substr($field, 0, -1);
@@ -342,4 +344,5 @@ class DB_QUERY extends DB {
 
         return $res;
     }
+
 }
