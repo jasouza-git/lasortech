@@ -34,11 +34,12 @@ if (isset($_POST["action"])) {
         $db = new DB_INSERT($db->conn);
 
         $res = match ($paras) {
-            'customer'      => $db->customer($_POST),
-            'item'          => $db->item($_POST),
-            'order'         => $db->order($_POST),
-            'state'         => $db->state($_POST),
-            default         => null,
+            'customer'          => $db->customer($_POST),
+            'item'              => $db->item($_POST),
+            'order'             => $db->order($_POST),
+            'state'             => $db->state($_POST),
+            'items_into_order'  => $db->items_into_order($_POST),
+            default             => null,
         };
 
         $out->data = $res;
@@ -101,7 +102,7 @@ if (isset($_POST["action"])) {
     } else if (isset($_POST["email"])) {
         $paras = $_POST["email"];
         $db = new Mailer($db->conn);
-        
+
         $res = match ($paras) {
             'order'         => $db->send_order($_POST),
             default         => null

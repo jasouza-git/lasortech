@@ -65,7 +65,6 @@ class DB_QUERY extends DB {
      * @return array the filtered orders
      */
     public function orders(array $data) {
-
         $paras = parameter([
             "keywords?" => "string[]",
             "mode?" => "string",
