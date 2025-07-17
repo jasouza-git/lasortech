@@ -5,7 +5,7 @@ CREATE TABLE `employees` (
 	`id` varchar(64) NOT NULL,
 	`name` varchar(64) NOT NULL,
 	`contact_number` varchar(20) NOT NULL,
-	`messenger_id` varchar(255),
+	`messenger_id` varchar(256),
 	`avatar` text,
 	`description` text,
 	`working` boolean NOT NULL DEFAULT true,
@@ -17,7 +17,7 @@ CREATE TABLE `employees` (
 CREATE TABLE `users` (
 	`id` varchar(64) NOT NULL,
 	`email` varchar(64) NOT NULL,
-	`password_hashed` varchar(255) NOT NULL,
+	`password_hashed` varchar(64) NOT NULL,
 	`update_at` timestamp(6) NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP(6),
 	`create_at` timestamp(6) NOT NULL DEFAULT (now()),
 	CONSTRAINT `users_id` PRIMARY KEY(`id`),
