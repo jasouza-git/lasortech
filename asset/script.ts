@@ -115,6 +115,92 @@ function card(data:{
     `;
     return out;
 }
+function row_employee(data:{
+    name:string,
+    contact_number:string,
+    messenger_id:string,
+    description:string,
+    working:boolean
+}|null = null, edit?:boolean) {
+    const init = q('#body>table').length ? false : true;
+    const table = q('#body>table')[0]??document.createElement('table');
+    const ek = edit ? 'contenteditable="true"' : '';
+    if (edit == undefined) edit = data == null;
+    if (init) table.innerHTML += /*html*/`<tr>
+        <th>Name</th>
+        <th>Contact Number</th>
+        <th>Messenger</th>
+        <th>Description</th>
+        <th>Working</th>
+        <th>Options</th>
+    </tr>`;
+    const end = q('#body>table tr.empty')[0]??document.createElement('tbody');
+    if (!q('#body>table tr.empty').length) {
+        end.classList.add('empty');
+        end.innerHTML = '<tr><td colspan="99999">Empty</th></tr>';
+        table.appendChild(end);
+    }
+    if (data != null) {
+        const row = document.createElement('tbody');
+        row.innerHTML = /*html*/`<tr>
+            <td ${ek}>${data.name}</td>
+            <td ${ek}>${data.contact_number}</td>
+            <td ${ek}>${data.messenger_id}</td>
+            <td ${ek}>${data.description}</td>
+            <td><input type="checkbox" ${edit ? '' : 'disabled'}${data.working ? ' checked' : ''}/></td>
+            <td><div>
+                <button>&#xe2b4;</button>
+                <button>&#xf304;</button>
+            </div></td>
+        </tr>`;
+        table.insertBefore(row, end);
+    }
+    if (init) q('#body')[0].appendChild(table);
+}
+function row_customer(data:{
+    id: string,
+    name: string,
+    contact_number: string,
+    email: string,
+    messenger_id: string | null,
+    description: string | null
+}|null = null, edit?:boolean) {
+    const init = q('#body>table').length ? false : true;
+    const table = q('#body>table')[0]??document.createElement('table');
+    const ek = edit ? 'contenteditable="true"' : '';
+    if (init) table.innerHTML += /*html*/`<tr>
+        <th>Name</th>
+        <th>Contact Number</th>
+        <th>Email</th>
+        <th>Messenger</th>
+        <th>Description</th>
+        <th>Options</th>
+    </tr>`;
+    const end = q('#body>table tbody:has(tr.empty)')[0]??document.createElement('tbody');
+    if (!q('#body>table tbody:has(tr.empty)').length) {
+        end.innerHTML = '<tr class="empty"><td colspan="99999">Empty</th></tr>';
+        table.appendChild(end);
+    }
+    if (data != null || edit) {
+        const row = document.createElement('tbody');
+        row.innerHTML = /*html*/`<tr ${data?.id ? `data="${data.id}"` : ''}>
+            <td ${ek}>${data?.name??''}</td>
+            <td ${ek}>${data?.contact_number??''}</td>
+            <td ${ek}>${data?.email??''}</td>
+            <td ${ek}>${data?.messenger_id??''}</td>
+            <td ${ek}>${data?.description??''}</td>
+            <td><div>
+                <button>&#xe2b4;</button>
+                ${
+                    edit ? `<button onclick="action['save_customer'](this)">+</button>` :
+                    '<button onclick="action[\'edit\'](this,\'save_customer\')">&#xf304;</button>'
+                }
+            </div></td>
+        </tr>`;
+        table.insertBefore(row, end);
+    }
+    if (init) q('#body')[0].appendChild(table);
+}
 
 
 /** API Response Type */
@@ -147,18 +233,7 @@ async function load() {
     document.body.classList.add('loading');
     const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'order', path.length > 1 && path[1].length ? path[1] : 'all'];
     // 2. Request to API
-    const datas = await api<{
-        id: string 
-        name: string,
-        contact_number: string,
-        email: string,
-        messenger_id: string|null,
-        avatar: string|null,
-        description: string|null,
-        working: boolean,
-        update_at: Date,
-        create_at: Date
-    }[]>({query:sub[0], mode:sub[1], session_id:getCookie('session')});
+    const datas = await api<any[]>({query:sub[0], mode:sub[1], session_id:getCookie('session')});
     const d1 = Number(new Date());
     // 3. Load content
     if (d1-d0 < 500) await new Promise(res => setTimeout(res, 500-(d1-d0)));
@@ -171,35 +246,21 @@ async function load() {
     q('#body', x => x.innerHTML = '');
     if (datas.data != null) {
         if (sub[0] == 'orders') {
+        } else if (sub[0] == 'customers') {
+            row_customer();
+            datas.data.map(x=>row_customer(x));
         } else {
-            const T = document.createElement('table');
-            T.innerHTML = /*html*/`<tr>
-                <th>Name</th>
-                <th>Contact Number</th>
-                <th>Email</th>
-                <th>Messenger</th>
-                <th>Description</th>
-                <th>Working</th>
-                <th>Options</th>
-            </tr>`;
-            for (const data of datas.data) {
-                T.innerHTML += /*html*/`<tr>
-                    <td>${data.name}</td>
-                    <td>${data.contact_number}</td>
-                    <td>${data.email}</td>
-                    <td>${data.messenger_id}</td>
-                    <td>${data.description}</td>
-                    <td><input type="checkbox" disabled${data.working ? ' checked' : ''}/></td>
-                    <td><div>
-                        <button>&#xe2b4;</button>
-                        <button>&#xf304;</button>
-                    </div></td>
-                </tr>`;
-            }
-            T.innerHTML += /*html*/`<tr class="empty">
-                <td colspan="99999">Empty</th>
-            </tr>`;
-            q('#body', x => x.appendChild(T));
+            for (const data of datas.data) row_employee(data as {
+                id: string 
+                name: string,
+                contact_number: string,
+                messenger_id: string|null,
+                avatar: string|null,
+                description: string|null,
+                working: boolean,
+                update_at: string,
+                create_at: string
+            });
         }
     } else {
         q('#body', x => x.innerHTML = /*html*/`
@@ -269,28 +330,41 @@ const action = {
             setCookie('session', res.data.id, 7);
             load();
         } else q('#login .login>p', x=>x.innerText = 'Error: '+(res.error??'Unknown'));
+    },
+    'save_customer': async (dom) => {
+        const p = dom.parentNode.parentNode.parentNode;
+        const id = p.getAttribute('data')??'',
+            name = p.children[0].innerText,
+            contact = p.children[1].innerText,
+            email = p.children[2].innerText,
+            messenger = p.children[3].innerText,
+            descript = p.children[4].innerText;
+        if ([name,contact,email,messenger,descript].some(x=>!x.length)) return;
+        Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
+        dom.innerHTML = '&#xe1d4;';
+        const rest = api({
+            ...(id.length ? { update:'customer', id } : {new:'customer'}),
+            name, contact_number:contact, email, messenger_id:messenger, description:descript,
+            session_id:getCookie('session')
+        });
+        dom.innerHTML = '&#xf304;';
+        dom.onclick = () => action['edit'](dom,'save_customer');
+    },
+    'edit': async (dom, com) => {
+        const p = dom.parentNode.parentNode.parentNode;
+        Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.setAttribute('contenteditable',''));
+        dom.innerHTML = '+';
+        dom.onclick = () => action[com](dom);
     }
 };
 
 /** New Action */
 q('#new', x => x.onclick = () => {
-    if (path[0] != 'orders') {
-        const R = document.createElement('tbody');
-        R.innerHTML = /*html*/`<tr class="edit">
-            <td contenteditable="true"></td>
-            <td contenteditable="true"></td>
-            <td contenteditable="true"></td>
-            <td contenteditable="true"></td>
-            <td contenteditable="true"></td>
-            <td><input type="checkbox"/></td>
-            <td class="edit"><div>
-                <button>&#xf329;</button>
-                <button>&#xe2b4;</button>
-                <button onclick="dom_save(this)">&#xf0c7;</button>
-            </div></td>
-        </tr>`;
-        q('#body>table', y => y.insertBefore(R, q('#body>table>tbody:last-child')[0]));
-    } else {
+    if (path[0] == 'customers') {
+        row_customer(null,true);
+    } else if (path[0] == 'employee') {
+        row_employee();
+    } else if (path[0] == 'orders') {
         q('#body')[0].appendChild(card());
     }
 });
