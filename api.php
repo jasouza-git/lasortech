@@ -59,11 +59,11 @@ if (isset($_POST["action"])) {
         $db = new DB_QUERY($db->conn);
 
         $res = match ($query) {
-            'employees'     => $db->employees($_GET),
-            'items'         => $db->items($_GET),
-            'customers'     => $db->customers($_GET),
-            'orders'        => $db->orders($_GET),
-            'states'        => $db->states($_GET),
+            'employees'     => $db->employees($_POST),
+            'items'         => $db->items($_POST),
+            'customers'     => $db->customers($_POST),
+            'orders'        => $db->orders($_POST),
+            'states'        => $db->states($_POST),
             default         => null,
         };
 
@@ -71,13 +71,13 @@ if (isset($_POST["action"])) {
     } else if (isset($_POST['get'])) {
         $get = $_POST['get'];
         $db = new DB_QUERY($db->conn);
-
         $res = match ($get) {
-            'employee'      => $db->get_employees($_GET),
-            'item'          => $db->get($_GET, "items"),
-            'customer'      => $db->get($_GET, "customers"),
-            'order'         => $db->get($_GET, "orders"),
-            'state'         => $db->get_states($_GET),
+            'current'       => $db->get_current($_POST),
+            'employee'      => $db->get_employees($_POST),
+            'item'          => $db->get($_POST, "items"),
+            'customer'      => $db->get($_POST, "customers"),
+            'order'         => $db->get($_POST, "orders"),
+            'state'         => $db->get_states($_POST),
             default         => null,
         };
 

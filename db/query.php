@@ -267,6 +267,53 @@ class DB_QUERY extends DB {
         return $this->fetch($sql_combined);
     }
 
+    /**
+     * get current logging employee
+     * @param array $data: session_id
+     * @return array:
+     *      - email: string,
+     *      - id: string,
+     *      - name: string,
+     *      - contact_number: string,
+     *      - messenger_id?: string,
+     *      - avatar?: string,
+     *      - description?: string,
+     *      - working: bool,
+     */
+    public function get_current(array $data) {
+        $paras = parameter([
+            "session_id" => "string"
+        ], $data);
+
+        $sql = <<<SQL
+        SELECT 
+            u.email,
+            e.id,
+            e.name,
+            e.contact_number,
+            e.messenger_id,
+            e.avatar,
+            e.description,
+            e.working
+        FROM sessions s
+        JOIN users u ON s.user_id = u.id
+        JOIN employees e ON u.id = e.id
+        WHERE s.id = ?;
+        SQL;
+
+        $res = $this->fetch([
+            "sql" => $sql,
+            "values" => [$paras['session_id']],
+            "types" => "s"
+        ]);
+
+        required(count($res) == 1, 25, "session not valid");
+
+        $res = $res[0];
+        $res['working'] = (bool)$res['working'];
+        return $res;
+    }
+
     public function get_employees(array $data) {
         $res = $this->get($data, "employees");
         foreach ($res as &$row) {
