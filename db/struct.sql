@@ -1,5 +1,11 @@
 START TRANSACTION;
 
+CREATE DATABASE IF NOT EXISTS lasortech
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_general_ci;
+
+USE lasortech;
+
 CREATE TABLE `employees` (
 	`id` varchar(64) NOT NULL,
 	`name` text NOT NULL,

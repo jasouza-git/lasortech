@@ -10,6 +10,9 @@ RewriteRule ^api/?$ /api.php [L]
 # 2. Redirect /favicon.ico to /asset/favicon.ico
 RewriteRule ^favicon\.ico$ /asset/favicon.ico [L]
 
+# 3. Hide /db directory
+RewriteCond %{REQUEST_URI} ^/db/ [NC]
+RewriteRule ^.*$ /index.php [L]
 # 3. For /user/* and /item/* if file or directory doesn't exist, serve asset/profile.jpeg
 #RewriteCond %{REQUEST_URI} ^/(user|item)/
 #RewriteCond %{REQUEST_FILENAME} !-f

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . "/../basic.php";
+require_once __DIR__ . "/basic.php";
 require_once "db.php";
 class DB_INSERT extends DB {
 
