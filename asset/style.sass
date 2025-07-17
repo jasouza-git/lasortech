@@ -28,11 +28,7 @@ body, html
     height: 100%
 body
     margin: $u 0 0 3*$u
-    //display: grid
-    //grid-template-columns: 3*$u auto
-    //grid-template-rows: $u auto
     font-family: LeagueSpartan
-    overflow: hidden
     color: #fff
     background-color: #111
 
@@ -216,8 +212,58 @@ body
             &::after
                 color: #aaa
 
+/* ----- PAGE ----- */
 #page
     z-index: 0
+    table
+        width: 100%
+        border-collapse: collapse
+        th
+            position: sticky
+            top: 0
+            background-color: #777
+            color: #fff
+            z-index: 0
+        th, td
+            border: 0.01*$u solid #555
+            padding: 0.05*$u
+            height: 0.3*$u
+        td:has(> div)
+            padding: 0
+        td>div
+            height: 100%
+            display: flex
+        button
+            width: 100%
+            height: 100%
+            margin: 0
+            background-color: #ddd
+            color: #555
+            font-family: FontAwesome
+            border: 0
+            border-left: 0.02*$u solid #fff
+            border-right: 0.02*$u solid #bbb
+            transition: background-color $t
+            &:hover
+                background-color: #ccc
+            &:active
+                background-color: #555
+                color: #ddd
+                border-left-color: #bbb
+                border-right-color: #fff
+    &>table
+        margin: 0.2*$u
+        width: calc(100% - 0.4*$u)
+
+/* ----- LOADER ----- */
+#loader
+    position: fixed
+    top: 3.1*$u
+    right: 0
+    width: calc(100% - 3*$u)
+    height: calc(100% - 3.1*$u)
+    background-color: #ddd
+    box-shadow: inset 0 0 0.25*$u #0005
 
 /* ----- BOTTOM TABS ----- */
 #tabs
@@ -229,12 +275,30 @@ body
     display: flex
     padding: 0.1*$u
     justify-content: center
+    transition: opacity $t 2*$t
+    &::before
+        content: ''
+        position: fixed
+        right: 0
+        bottom: 0
+        width: calc(100% - 3*$u)
+        height: calc(100% - $u)
+        background-color: #ddd
+        z-index: -1
+        border-radius: 0.25*$u 0 0 0
+        box-shadow: inset 0 0 0.25*$u #0005
+        transition: opacity $t $t
+        mask-image: linear-gradient(to bottom, black 2.1*$u, transparent 3*$u, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
+        -webkit-mask-image: linear-gradient(to bottom, black 2.1*$u, transparent 3*$u, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
+        pointer-events: none
+
     button
         border-radius: 0.55*$u
         min-width: 0.55*$u
         border: 0.01*$u solid #555
-        background: none
+        background-color: #6660
         color: #555
+        transition: background-color $t, color $t
         &+button
             margin-left: 0.1*$u
         &.more
@@ -244,6 +308,11 @@ body
                 font-family: FontAwesome
                 font-size: 0.25*$u
                 color: #555
+        &:hover
+            background-color: #ccc
+        &.on
+            background-color: #666F
+            color: #fff
     div
         border-radius: 0.55*$u
         border: 0.01*$u solid #555
@@ -309,22 +378,9 @@ body
             position: relative
             grid-area: 2 / 1 / span 1 / span 2
             overflow: auto
-            padding: 0 0.2*$u
+            padding: 0 0.2*$u 0.1*$u 0.2*$u
             mask-image: linear-gradient(to bottom, black calc(100% - 0.1*$u), transparent 100%)
             -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 0.1*$u), transparent 100%)
-            table
-                width: 100%
-                border-collapse: collapse
-                th
-                    position: sticky
-                    top: 0
-                    background-color: #777
-                    color: #fff
-                    z-index: 0
-                th, td
-                    border: 0.01*$u solid #555
-                    padding: 0.05*$u
-                    height: 0.3*$u
         p
             grid-area: 3 / 1 / span 1 / span 2
             text-align: center
@@ -393,6 +449,9 @@ body
         h1
             grid-area: 1 / 2
             text-align: right
+    &:not(.edit)
+        .edit
+            display: none
 
 /* ----- BEFORE LOADED ----- */
 body.load
