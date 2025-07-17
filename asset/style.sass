@@ -78,7 +78,7 @@ body::before, #head::after
     display: grid
     grid-template-columns: 2*$u auto
     grid-template-rows: 1fr 1fr
-    z-index: 1
+    z-index: 4
     &::after
         position: absolute
         z-index: -1
@@ -174,7 +174,7 @@ body::before, #head::after
     border-radius: 0.2*$u 0 0.2*$u 0.2*$u
     margin-bottom: 0.1*$u
     color: #555
-    z-index: 1
+    z-index: 3
     &>input
         grid-area: 1 / 1 / span 1 / span 5
         height: 0.5*$u
@@ -300,6 +300,7 @@ table
     opacity: 0
     pointer-events: none
     transition: opacity $t
+    z-index: 2
 
 /* ----- BOTTOM TABS ----- */
 #tabs
@@ -380,6 +381,7 @@ table
 
 /* ----- COMPONENTS ----- */
 .card
+    position: relative
     display: grid
     grid-template-columns: auto 5*$u
     grid-template-rows: auto 0.5*$u
@@ -486,6 +488,11 @@ table
         h1
             grid-area: 1 / 2
             text-align: right
+    /* TOOLS */
+    &>div:nth-child(4)
+        display: none
+        grid-area: 3 / 1 / span 1 / span 2
+        display: flex
     &:not(.edit)
         .edit
             display: none

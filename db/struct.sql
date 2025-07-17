@@ -1,6 +1,12 @@
 SET GLOBAL time_zone = '+00:00';
 SET time_zone = '+00:00';
 
+CREATE DATABASE IF NOT EXISTS lasortech
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_general_ci;
+
+USE lasortech;
+
 CREATE TABLE `employees` (
 	`id` varchar(64) NOT NULL,
 	`name` varchar(64) NOT NULL,

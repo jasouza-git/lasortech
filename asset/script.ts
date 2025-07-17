@@ -93,9 +93,8 @@ function card(data:{
             </h2>
             <div>
                 <table>
-                    <tr><th>Name</th><th>Brand</th><th>Mode</th><th>Date</th><th class="edit">Options</th></tr>
-                    <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button></div></td></tr>
-                    <tr class="edit"><div><td colspan="999"><div><button>+</button></div></div></td></tr>
+                    <tbody><tr><th>Name</th><th>Brand</th><th>Model</th><th>Serial</th><th class="edit">Options</th></tr></tbody>
+                    <tbody><tr class="edit"><div><td colspan="999"><div><button onclick="action['new_item'](this)">+</button></div></div></td></tr></tbody>
                 </table>
             </div>
             <p ${ek}>${data?data.description:''}</p>
@@ -111,6 +110,16 @@ function card(data:{
             <div data="0"></div>
             <p>${data?data.status:'Not yet created'}</p>
             <h1>${data?data.rms:generateKey()}</h1>
+        </div>
+        <div>
+            <button>
+                <icon>&#xf1f8;</icon>
+                Delete
+            </button>
+            <button>
+                <icon>&#xf0c7;</icon>
+                Save
+            </button>
         </div>
     `;
     return out;
@@ -217,7 +226,11 @@ interface res<T> {
 async function api<T>(data) {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(data)) {
-        params.append(key, String(value));
+        if (Array.isArray(value)) {
+            for (const subval of value) {
+                params.append(`${key}[]`, String(subval));
+            }
+        } else params.append(key, String(value));
     }
     const res = await fetch('/api.php', {
         method: 'POST',
@@ -227,16 +240,21 @@ async function api<T>(data) {
     return res as res<T>;
 }
 /** Loads page */
-async function load() {
+async function load(quick=false) {
     // 1. Prepare request
     const d0 = Number(new Date());
-    document.body.classList.add('loading');
+    if (!quick) document.body.classList.add('loading');
     const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'order', path.length > 1 && path[1].length ? path[1] : 'all'];
     // 2. Request to API
-    const datas = await api<any[]>({query:sub[0], mode:sub[1], session_id:getCookie('session')});
+    const datas = await api<any[]>({
+        query:sub[0],
+        mode:sub[1],
+        session_id:getCookie('session'),
+        ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {})
+    });
     const d1 = Number(new Date());
     // 3. Load content
-    if (d1-d0 < 500) await new Promise(res => setTimeout(res, 500-(d1-d0)));
+    if (!quick && d1-d0 < 500) await new Promise(res => setTimeout(res, 500-(d1-d0)));
     q('#new', x => (sub[0] == 'employees' ? x.setAttribute('disabled','') : x.removeAttribute('disabled')));
     q('#find input[type=checkbox]', x => {
         const p = x.id.split('_').slice(1);
@@ -272,7 +290,9 @@ async function load() {
     }
     
     // 4. Remove Animation
-    await new Promise(res => setTimeout(res, (d1-d0)%500))
+    if (!quick) {
+        await new Promise(res => setTimeout(res, (d1-d0)%500))
+    }
     document.body.classList.remove('load');
     document.body.classList.remove('loading');
 }
@@ -355,6 +375,21 @@ const action = {
         Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.setAttribute('contenteditable',''));
         dom.innerHTML = '+';
         dom.onclick = () => action[com](dom);
+    },
+    'new_item': async (dom) => {
+        const p = dom.parentNode.parentNode.parentNode.parentNode;
+        const T = document.createElement('tbody');
+        const ek = 'contenteditable="true"';
+        T.innerHTML = /*html*/`<tr>
+            <td ${ek}></td>
+            <td ${ek}></td>
+            <td ${ek}></td>
+            <td ${ek}></td>
+            <td class="edit"><div>
+                <button>&#xe2b4;</button>
+            </div></td>
+        </tr>`;
+        p.parentNode.insertBefore(T, p);
     }
 };
 
@@ -368,6 +403,32 @@ q('#new', x => x.onclick = () => {
         q('#body')[0].appendChild(card());
     }
 });
+
+/** Find */
+q('#find_text')[0].onkeyup = q('#search')[0].click = () => load(true);
+
+/** Find filters */
+let change = false;
+q('#find input[type=checkbox]', x => x.addEventListener('change', () => {
+    if (change) return;
+    change = true;
+    let p = x.id.split('_').splice(1);
+    const cs = [];
+    q('#find input[type=checkbox]', y => {
+        if (x == y) return;
+        const p2 = y.id.split('_').slice(1);
+        let c = p[0] != p2[0] ? false : p[1] == 'all' ? x.checked : p2[1] == 'all' ? y.parentElement.nextSibling.children[0].checked && y.parentElement.nextSibling.nextSibling.children[0].checked : y.checked;
+        if (y.checked != c) y.click();
+        if (c) cs.push(y);
+    });
+    if (!x.checked) p = cs.length ? cs[0].id.split('_').slice(1) : null
+    if (p != null) {
+        path = p;
+        load();
+    }
+    change = false;
+    console.log(p);
+}));
 
 /** Adding event to login buttons */
 q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
