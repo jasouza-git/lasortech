@@ -12,12 +12,23 @@ class DB {
             $servername = "127.0.0.1";
             $username = "root";
             $password = "";
-            $dbname = "lasortech";
+            $dbname = "mysql";
             $port = 3306; 
 
             $conn = new mysqli($servername, $username, $password, $dbname, $port);
             
             guard( $conn->connect_error, 1);
+
+            $conn->query(<<<SQL
+                CREATE DATABASE IF NOT EXISTS lasortech
+                CHARACTER SET utf8mb4
+                COLLATE utf8mb4_general_ci;
+                SQL
+            );
+
+            $conn->close();
+
+            $conn = new mysqli($servername, $username, $password, "lasortech", $port);
 
             $tables = $conn->query("SHOW tables")->fetch_all();
 
