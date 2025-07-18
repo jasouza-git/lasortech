@@ -275,7 +275,25 @@ class DB_QUERY extends DB {
         $states = $this->fetch($sql_combined);
 
         return $this->append_state_labels($states);
+    }
 
+    public function email_verification_code(array $data) {
+        $paras = parameter([
+            "emails?" => "string[]"
+        ], $data);
+
+        $queries = $paras['emails'] ?? [];
+
+        $sql_combined = build_fetch_sql(
+            $queries, 
+            "SELECT * FROM email_validations",
+            ["(email = ?)", 1],
+            true,
+            null,
+            fn() => null
+        );
+
+        return $this->fetch($sql_combined);
     }
 
     /**

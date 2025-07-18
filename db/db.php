@@ -40,6 +40,7 @@ class DB {
 
             $need_init = false;
             foreach ([
+                "email_validations",
                 "users",
                 "employees",
                 "customers",

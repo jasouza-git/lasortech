@@ -254,4 +254,15 @@ class DB_INSERT extends DB {
         $this->conn->commit();
         return true;
     }
+
+    public function email_verification(array $data) {
+        $codes = parameter([
+            "email" => "string",
+            "code" => "string"
+        ], $data);
+
+        $combined = build_insert_sql($codes, "email_validations");
+        $this->insert($combined, true);
+        return true;
+    }
 }

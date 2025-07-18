@@ -1,6 +1,16 @@
 SET GLOBAL time_zone = '+00:00';
 SET time_zone = '+00:00';
 
+CREATE TABLE `email_validations` (
+	`id` varchar(64) NOT NULL,
+	`email` varchar(64) NOT NULL,
+	`code` varchar(6) NOT NULL,
+	`update_at` timestamp(6) NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP(6),
+	`create_at` timestamp(6) NOT NULL DEFAULT (now()),
+	CONSTRAINT `email_validations_id` PRIMARY KEY(`id`),
+	CONSTRAINT `email_validations_email_unique` UNIQUE(`email`)
+);
+
 CREATE TABLE `employees` (
 	`id` varchar(64) NOT NULL,
 	`name` varchar(64) NOT NULL,

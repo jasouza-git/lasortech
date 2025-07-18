@@ -1,4 +1,6 @@
 <?php
+
+use function GuzzleHttp\default_ca_bundle;
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
@@ -11,17 +13,21 @@ require_once "db/delete.php";
 require_once "db/auth.php";
 require_once "db/mailer.php";
 
+date_default_timezone_set('UTC');
+
 $out = (object) [ "errno" => 0 ];
 
 if (isset($_POST["action"])) {
     $action = $_POST["action"];
     $db = new Auth();
+    $mailer = new Mailer($db->conn);
 
     $res = match ($action) {
-        "register"      => $db->register($_POST),
-        "login"         => $db->login($_POST),
-        "login_out"     => $db->logout($_POST),
-        default         => null
+        "register"                  => $db->register($_POST),
+        "login"                     => $db->login($_POST),
+        "send_verification_email"   => $mailer->send_verification_code($_POST),
+        "forgot_password"           => $db->forget_password($_POST),
+        default                     => null
     };
 
     $out->data = $res;
@@ -107,6 +113,16 @@ if (isset($_POST["action"])) {
         $res = match ($paras) {
             'order'         => $db->send_order($_POST),
             default         => null
+        };
+
+        $out->data = $res;
+    } else if (isset($_POST['auth'])) {
+        $paras = $_POST['auth'];
+
+        $res = match ($paras) {
+            "reset_password"    => $db->reset_password($_POST) && $db->logout($_POST),
+            "login_out"         => $db->logout($_POST),
+            default             => null         
         };
 
         $out->data = $res;

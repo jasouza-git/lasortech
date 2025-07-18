@@ -29,7 +29,8 @@ class DB_UPDATE extends DB {
         ], $data);
 
         $combined = build_update_sql($data['id'], $customer, "customers");
-        return $this->execute($combined);
+        $this->execute($combined);
+        return true;
     }
 
     public function item(array $data) {
@@ -43,7 +44,8 @@ class DB_UPDATE extends DB {
         ], $data);
 
         $combined = build_update_sql($data['id'], $item, "items");
-        return $this->execute($combined);
+        $this->execute($combined);
+        return true;
     }
 
     public function order(array $data) {
@@ -54,6 +56,18 @@ class DB_UPDATE extends DB {
         ], $data);
 
         $combined = build_update_sql($data['id'], $order, "orders");
-        return $this->execute($combined);
+        $this->execute($combined);
+        return true;
+    }
+
+    public function user(array $data) {
+        required(isset($data['email']), 44, "provide the email of user to reset the password");
+        $user = parameter([
+            "password_hashed" => "string",
+        ], $data);
+
+        $combined = build_update_sql($data['email'], $user, "users", "email");
+        $this->execute($combined);
+        return true;
     }
 }

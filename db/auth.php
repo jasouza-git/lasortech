@@ -4,6 +4,8 @@ require_once "db.php";
 require_once "insert.php";
 require_once "query.php";
 require_once "delete.php";
+require_once "mailer.php";
+require_once "update.php";
 class Auth extends DB {
     public function register(array $data) {
         $register_para = parameter([
@@ -11,6 +13,7 @@ class Auth extends DB {
             "password_hashed" => "string",
             "name" => "string",
             "contact_number" => "string",
+            "email_verification_code" => "string",
             "messenger_id?"=> "string",
             "description?" => "string"
         ], $data);
@@ -23,6 +26,11 @@ class Auth extends DB {
             "ids" => $register_para['email']
         ], "users", "email");
         required(count($users_existed) == 0, 25, "user existed");
+
+        $this->verify_email([
+            "email" => $register_para['email'],
+            "code" => $register_para["email_verification_code"],
+        ]);
 
         $this->conn->begin_transaction();
         $user = $insert->user($register_para);
@@ -64,8 +72,6 @@ class Auth extends DB {
     }
 
     public function logout(array $data) {
-        $this->auth($data);
-
         $login_out_data = parameter([
             "session_id" => "string"
         ], $data);
@@ -91,8 +97,8 @@ class Auth extends DB {
         required(count($sessions) && $sessions[0], 23,"session invalid");
         $session = $sessions[0];
 
-        $lastUpdate = strtotime($session['create_at']);
-        $expired = $lastUpdate + 7 * 24 * 60 * 60 < time();
+        $last_update = strtotime($session['update_at']);
+        $expired = ($last_update + 7 * 24 * 60 * 60) < time();
 
         if ($expired) {
             $delete->delete([
@@ -101,6 +107,93 @@ class Auth extends DB {
 
             required(false, 24, "user session expired");
         }
+
+        return true;
+    }
+
+    public function forget_password(array $data) {
+        $reset_para = parameter([
+            "email" => "string",
+            "password_hashed" => "string",
+            "email_verification_code" => "string"
+        ], $data);
+
+        $query = new DB_QUERY($this->conn);
+        
+        $users = $query->get([
+            "ids" => [$reset_para['email']]
+        ], "users", "email");
+        required(count($users) && $users[0], 45,"user not exist");
+
+        $this->verify_email([
+            "email" => $reset_para['email'],
+            "code" => $reset_para["email_verification_code"]
+        ]);
+
+        $update = new DB_UPDATE($this->conn);
+
+        return $update->user([
+            "email" => $reset_para["email"],
+            "password_hashed" => $reset_para['password_hashed']
+        ]);
+    }
+
+    public function reset_password(array $data) {
+        $this->auth($data);
+
+        $reset_para = parameter([
+            "old_password_hashed" => "string",
+            "new_password_hashed" => "string"
+        ], $data);
+
+        $query = new DB_QUERY($this->conn);
+        $update = new DB_UPDATE($this->conn);
+
+        $user_current = $query->get_current([
+            "session_id" => $data['session_id']
+        ]);
+
+        $users = $query->get([
+            "ids" => [$user_current['email']]
+        ], "users", "email");
+
+        required(count($users) && $users[0], 45,"user not exist");
+
+        $user = $users[0];
+        required($user['password_hashed'] == $reset_para['old_password_hashed'], 46, "old password incorrect");
+
+        return $update->user([
+            "email" => $user_current["email"],
+            "password_hashed" => $reset_para['new_password_hashed']
+        ]);
+    }
+
+    public function verify_email(array $data) {
+        $paras = parameter([
+            "email" => "string",
+            "code" => "string"
+        ], $data);
+
+        $query = new DB_QUERY($this->conn);
+        $delete = new DB_DELETE($this->conn);
+
+        $verifications = $query->email_verification_code([
+            "emails" => [$paras['email']]
+        ]);
+        required(count($verifications) && $verifications[0] , 40, "email verification code not sent");
+
+        $verification = $verifications[0];
+
+        required($verification['code'] == $paras['code'], 41, "verification code incorrect");
+
+        $last_update = strtotime($verification['update_at']);
+        $expired = ($last_update + 5 * 60) < time();
+
+        $delete->delete([
+            "ids" => [$paras['email']],
+        ], "email_validations", "email");
+        
+        required(!$expired, 42, "email verification code expired");
 
         return true;
     }
