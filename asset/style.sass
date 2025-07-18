@@ -76,7 +76,8 @@ body::before, #head::after
     width: calc(100% - 3*$u)
     height: $u
     display: grid
-    grid-template-columns: 2*$u auto
+    d-template-columns: auto
+    //grid-template-columns: 2*$u auto
     grid-template-rows: 1fr 1fr
     z-index: 4
     &::after
@@ -99,12 +100,14 @@ body::before, #head::after
         text-align: center
         margin: 0
         line-height: $u
-    #head_info0
-        grid-area: 1 / 1
-    #head_info1
-        grid-area: 2 / 1
+    // #head_info0
+    //     grid-area: 1 / 1
+    // #head_info1
+    //     grid-area: 2 / 1
+    #head_info0, #head_info1
+        display: none
     #head_name
-        grid-area: 1 / 2 / span 2
+        grid-area: 1 / 1 / span 2
 /* ----- SIDE ----- */
 #side
     position: fixed
@@ -431,13 +434,16 @@ table
         grid-template-rows: 0.75*$u auto 0.5*$u 0.5*$u
         grid-area: 1 / 2
         z-index: 0
-        h1
+        h1, select
             grid-area: 1 / 1
             margin: 0
             padding: 0 0.2*$u
             font-size: 0.25*$u
             line-height: 0.75*$u
             white-space: nowrap
+        select
+            border: 0
+            background: none
         p
             grid-area: 2 / 1
             padding: 0.1*$u
@@ -464,13 +470,12 @@ table
                     content: '\f0e0'
     /* INFO */
     &>div:nth-child(3)
-        display: grid
-        grid-template-columns: 0.5*$u auto
-        grid-template-rows: 100%
+        display: flex
         grid-area: 2 / 1 / span 1 / span 2
         background-color: #555
         z-index: 0
         div
+            width: 0.2*$u
             grid-area: 1 / 1
             background-color: #a11
             margin: 0.15*$u
@@ -483,16 +488,20 @@ table
             line-height: 0.5*$u
             white-space: nowrap
             color: #fff
-        p
-            grid-area: 1 / 2
+            flex-grow: 1
         h1
-            grid-area: 1 / 2
             text-align: right
-    /* TOOLS */
-    &>div:nth-child(4)
-        display: none
-        grid-area: 3 / 1 / span 1 / span 2
-        display: flex
+        button
+            border: 0
+            background: none
+            color: #fff
+            display: flex
+            flex-direction: column
+            justify-content: center
+            border-left: 0.01*$u solid #777
+            border-right: 0.01*$u solid #333
+            &:active
+                background-color: #333
     &:not(.edit)
         .edit
             display: none

@@ -55,7 +55,7 @@ $config = (object)[
         <div id="head">
             <span id="head_info0">XX Handling</span>
             <span id="head_info1">XX finished</span>
-            <h1 id="head_name">Title</h1>
+            <h1 id="head_name">LasorTech RMA System</h1>
         </div>
         <div id="find">
             <input id="find_text" placeholder="Find in System:"></input>

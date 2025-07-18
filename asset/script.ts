@@ -71,7 +71,7 @@ function generateKey() {
 
 
 /* ----- COMPONENT GENERATOR ----- */
-function card(data:{
+async function card(data:{
     order_id:string,
     update:string,
     create:string,
@@ -80,8 +80,19 @@ function card(data:{
     description:string
 }|null=null, edit?:boolean) {
     const out = document.createElement('div');
-    if (edit == undefined) edit = data != null;
+    if (edit == undefined) edit = data == null;
     const ek = edit?'contenteditable="true"':'';
+    const customers = await api<{
+        id:string,
+        name:string,
+        description:string,
+        contact_number:string,
+        email:string
+    }[]>({
+        query: 'customers',
+        mode: 'all',
+        session_id: getCookie('session')
+    });
     out.classList.add('card');
     out.classList.add('edit');
     out.innerHTML = /*html*/`
@@ -100,23 +111,22 @@ function card(data:{
             <p ${ek}>${data?data.description:''}</p>
         </div>
         <div>
-            <h1>Customer Name</h2>
-            <p>Customer Description</p>
-            <a class="fb">jkergre</a>
-            <a class="cn">090230944545</a>
-            <a class="em">erger@hnrh.vof</a>
+            ${edit ? /*html*/`<select>
+                ${customers.data.map(x => `<option value="${x.id}">${x.name}</option>`)}
+            </select>` : `<h1>Customer Name</h2>`}
+            <p>${edit && customers.data.length ? customers.data[0].description : ''}</p>
+            <a class="cn">${edit && customers.data.length ? customers.data[0].contact_number : ''}</a>
+            <a class="em">${edit && customers.data.length ? customers.data[0].email : ''}</a>
         </div>
         <div>
             <div data="0"></div>
             <p>${data?data.status:'Not yet created'}</p>
             <h1>${data?data.rms:generateKey()}</h1>
-        </div>
-        <div>
             <button>
                 <icon>&#xf1f8;</icon>
                 Delete
             </button>
-            <button>
+            <button onclick="action['save_order'](this);">
                 <icon>&#xf0c7;</icon>
                 Save
             </button>
@@ -143,8 +153,8 @@ function row_employee(data:{
         <th>Working</th>
         <th>Options</th>
     </tr>`;
-    const end = q('#body>table tr.empty')[0]??document.createElement('tbody');
-    if (!q('#body>table tr.empty').length) {
+    const end = q('#body>table tbody.empty')[0]??document.createElement('tbody');
+    if (!q('#body>table tbody.empty').length) {
         end.classList.add('empty');
         end.innerHTML = '<tr><td colspan="99999">Empty</th></tr>';
         table.appendChild(end);
@@ -154,8 +164,8 @@ function row_employee(data:{
         row.innerHTML = /*html*/`<tr>
             <td ${ek}>${data.name}</td>
             <td ${ek}>${data.contact_number}</td>
-            <td ${ek}>${data.messenger_id}</td>
-            <td ${ek}>${data.description}</td>
+            <td ${ek}>${data?.messenger_id??''}</td>
+            <td ${ek}>${data?.description??''}</td>
             <td><input type="checkbox" ${edit ? '' : 'disabled'}${data.working ? ' checked' : ''}/></td>
             <td><div>
                 <button>&#xe2b4;</button>
@@ -264,6 +274,9 @@ async function load(quick=false) {
     q('#body', x => x.innerHTML = '');
     if (datas.data != null) {
         if (sub[0] == 'orders') {
+            for (const data of datas.data) {
+                q('#body')[0].appendChild(await card(data));
+            }
         } else if (sub[0] == 'customers') {
             row_customer();
             datas.data.map(x=>row_customer(x));
@@ -359,12 +372,14 @@ const action = {
             email = p.children[2].innerText,
             messenger = p.children[3].innerText,
             descript = p.children[4].innerText;
-        if ([name,contact,email,messenger,descript].some(x=>!x.length)) return;
+        if ([name,contact,email].some(x=>!x.length)) return;
         Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
         dom.innerHTML = '&#xe1d4;';
         const rest = api({
             ...(id.length ? { update:'customer', id } : {new:'customer'}),
-            name, contact_number:contact, email, messenger_id:messenger, description:descript,
+            name, contact_number:contact, email,
+            ...(messenger.length ? {messenger_id:messenger} : {}),
+            ...(descript.length ? {description:descript} : {}),
             session_id:getCookie('session')
         });
         dom.innerHTML = '&#xf304;';
@@ -390,17 +405,46 @@ const action = {
             </div></td>
         </tr>`;
         p.parentNode.insertBefore(T, p);
+    },
+    'save_order': async (dom) => {
+        const p = dom.parentNode.parentNode;
+        const As:any[] = Array.from(p.children[0].querySelectorAll('tbody:not(:first-child):not(:last-child)'));
+        const id = p.querySelector('select').value;
+        const ids = [];
+        for (const A of As) {
+            console.log(A);
+            const res = await api<{id:string}>({
+                new: 'item',
+                session_id: getCookie('session'),
+                belonged_customer_id: id,
+                name: A.querySelector('td:nth-child(1)').innerText,
+                brand: A.querySelector('td:nth-child(2)').innerText,
+                model: A.querySelector('td:nth-child(3)').innerText,
+                serial: A.querySelector('td:nth-child(4)').innerText,
+            });
+            if (res.errno) throw new Error(res.error??'Unknown');
+            ids.push(res.data.id);
+        }
+        const res = await api({
+            new: 'order',
+            rms_code: p.children[2].querySelector('h1').innerText,
+            description: p.children[0].querySelector('p').innerHTML,
+            item_ids: ids,
+            session_id: getCookie('session')
+        });
+        console.log(res);
+        //location.reload();
     }
 };
 
 /** New Action */
-q('#new', x => x.onclick = () => {
+q('#new', x => x.onclick = async () => {
     if (path[0] == 'customers') {
         row_customer(null,true);
     } else if (path[0] == 'employee') {
         row_employee();
     } else if (path[0] == 'orders') {
-        q('#body')[0].appendChild(card());
+        q('#body')[0].appendChild(await card());
     }
 });
 
