@@ -176,7 +176,7 @@ $state_map = [
 
 $state_appearences = [
     [
-        "waitting",
+        "waiting",
         "#0000FF",
     ], [
         "processing",

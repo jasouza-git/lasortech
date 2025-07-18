@@ -75,6 +75,7 @@ if (isset($_POST["action"])) {
         $db = new DB_QUERY($db->conn);
         $res = match ($get) {
             'current'       => $db->get_current($_POST),
+            'items_of_order'=> $db->get_items_in_order($_POST),
             'order_detail'  => $db->get_orders_detail($_POST),
             'employee'      => $db->get_employees($_POST),
             'item'          => $db->get($_POST, "items"),

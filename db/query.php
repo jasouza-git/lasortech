@@ -63,6 +63,7 @@ class DB_QUERY extends DB {
      *          - "ongoing": all ongoing orders
      *          - "finished": all finished orders
      * @return array the filtered orders
+     * 
      */
     public function orders(array $data) {
         $paras = parameter([
@@ -110,7 +111,15 @@ class DB_QUERY extends DB {
             }
         );
 
-        return $this->fetch($sql_combined);
+        $orders = $this->fetch($sql_combined);
+
+        $order_ids = array_map(fn($order) => $order['id'], $orders);
+
+        $orders_detailed = $this->get_orders_detail([
+            "ids" => $order_ids
+        ]);
+
+        return $orders_detailed;
     }
 
     /**
@@ -263,7 +272,10 @@ class DB_QUERY extends DB {
             fn() => null
         );
 
-        return $this->fetch($sql_combined);
+        $states = $this->fetch($sql_combined);
+
+        return $this->append_state_labels($states);
+
     }
 
     /**
@@ -348,7 +360,8 @@ class DB_QUERY extends DB {
                 }
             }
         }
-        return $states;
+
+        return $this->append_state_labels($states);
     }
 
     /**
@@ -449,6 +462,8 @@ class DB_QUERY extends DB {
                     "ids" => [$row['state_id']]
                 ])[0];
 
+                $state_data = $this->append_state_labels([$state_data])[0];
+
                 $out[$order_id] = [
                     "id" => $row["order_id"],
                     "rms_code" => $row["rms_code"],
@@ -475,5 +490,41 @@ class DB_QUERY extends DB {
         }
 
         return array_values($out);
+    }
+
+    public function get_items_in_order(array $data) {
+        $paras = parameter([
+            "order_ids" => "string[]"
+        ], $data);
+
+
+        $ids = $paras["order_ids"];
+        $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+        $types = str_repeat('s', count($ids));
+
+        $sql = <<<SQL
+        SELECT 
+            i.*
+        FROM order_item_map oim
+        JOIN items i ON oim.item_id = i.id
+        WHERE oim.order_id IN ($placeholders);
+        SQL;
+
+        return $this->fetch([
+            "sql" => $sql,
+            "values" => $ids,
+            "types" => $types
+        ]);
+    }
+
+    private function append_state_labels(array $states) {
+        global $state_appearences;
+
+        foreach ($states as &$state) {
+            $state["label"] = $state_appearences[$state['state_code']][0];
+            $state["color"] = $state_appearences[$state['state_code']][1];
+        }
+        unset($state);
+        return $states;
     }
 }
