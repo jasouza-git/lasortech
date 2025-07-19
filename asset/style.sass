@@ -160,6 +160,7 @@ body::before, #head::after
     flex-direction: column
     color: #000
     transition: opacity $t 2*$t
+    padding-bottom: $u
     &>table
         margin: 0.2*$u
         width: calc(100% - 0.4*$u)
@@ -319,6 +320,7 @@ table
     padding: 0.1*$u
     justify-content: center
     transition: opacity $t 2*$t
+    z-index: 2
     &::before
         content: ''
         position: fixed
@@ -508,6 +510,9 @@ table
     &:not(.edit)
         .edit
             display: none
+    &.edit
+        .noedit
+            display: none
 
 /* ----- LOGIN/SIGNUP ----- */
 #login
@@ -608,63 +613,90 @@ table
     width: 6*$u
     z-index: 3
     &>div
-        position: relative
-        border: 0.02*$u solid #333
-        display: flex
-        flex-wrap: wrap
-        h1, p
-            flex-grow: 1
-            width: 100%
-        h1
-            margin: 0
-            padding: 0.2*$u
-            background-color: #444
-            font-size: 0.3*$u
-        p
-            margin: 0
-            padding: 0.2*$u
-            background-color: #ddd
-            color: #333
-        button
-            flex-grow: 1
-            border: 0
-            background-color: #333
-            height: 0.3*$u
-            color: #fff
-            border-left: 0.02*$u solid #555
-            border-right: 0.02*$u solid #111
-        &::before
-            content: ''
-            position: absolute
-            left: -0.05*$u
-            top: -0.05*$u
-            width: calc(100% + 0.08*$u)
-            height: calc(100% + 0.08*$u)
-            border: 0.02*$u solid #333
-            /*background-color: #ddd*/
-            z-index: -1
-        &+div
+        overflow: visible
+        width: 100%
+        max-height: 0
+        margin-top: 0
+        transition: max-height 2*$t ease, margin $t ease
+        &[step="0"]
+            max-height: 100vh
             margin-top: 0.2*$u
-        &.error
-            border-color: #a33
+        &[step="1"]
+            margin-left: calc(100% + 0.3*$u)
+        &>div
+            position: relative
+            border: 0.02*$u solid #333
+            display: flex
+            flex-wrap: wrap
+            h1, p
+                flex-grow: 1
+                width: 100%
             h1
-                background-color: #a33
+                margin: 0
+                padding: 0.2*$u
+                background-color: #444
+                font-size: 0.3*$u
+                button
+                    float: right
+                    width: 0.7*$u
+                    height: 0.7*$u
+                    margin: -0.2*$u
+            p
+                margin: 0
+                padding: 0.2*$u
+                background-color: #ddd
+                color: #333
+                max-height: 200px
+                overflow: auto
             button
-                background-color: #a33
-                border-left-color: #c55
-                border-right-color: #811
+                flex-grow: 1
+                border: 0
+                background-color: #333
+                height: 0.3*$u
+                color: #fff
+                border-left: 0.02*$u solid #555
+                border-right: 0.02*$u solid #111
+                &:active
+                    background-color: #222
+                    border-left-color: #111
+                    border-right-color: #555
+            textarea
+                display: block
+                width: 100%
             &::before
+                content: ''
+                position: absolute
+                left: -0.05*$u
+                top: -0.05*$u
+                width: calc(100% + 0.08*$u)
+                height: calc(100% + 0.08*$u)
+                border: 0.02*$u solid #333
+                /*background-color: #ddd*/
+                z-index: -1
+            &.error
                 border-color: #a33
-        &.warning
-            border-color: #aa3
-            h1
-                background-color: #aa3
-            button
-                background-color: #aa3
-                border-left-color: #cc5
-                border-right-color: #881
-            &::before
+                h1
+                    background-color: #a33
+                button
+                    background-color: #a33
+                    border-left-color: #c55
+                    border-right-color: #811
+                    &:active
+                        background-color: #922
+                        border-left-color: #811
+                        border-right-color: #c55
+                &::before
+                    border-color: #a33
+            &.warning
                 border-color: #aa3
+                h1
+                    background-color: #aa3
+                button
+                    background-color: #aa3
+                    border-left-color: #cc5
+                    border-right-color: #881
+                &::before
+                    border-color: #aa3
 /* ----- BEFORE LOADED ----- */
 body.load
     overflow: hidden

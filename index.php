@@ -187,7 +187,7 @@ $config = (object)[
                 <button id="login_forgot_sendcode" onclick="action['send_code'](this)">Send Verification Code</button>
                 <div id="login_forgot_verify" style="display:none">
                     <h1><icon>&#xf00c;</icon>Verification Code</h1><input id="login_forgot_code"></input>
-                    <h1><icon>&#xf00c;</icon>New Password</h1><input id="login_forgot_pass" type="pass"></input>
+                    <h1><icon>&#xf084;</icon>New Password</h1><input id="login_forgot_pass" type="password"></input>
                     <button onclick="action['change_pass'](this)">Change Password</button>
                 </div>
             </div>
@@ -197,10 +197,11 @@ $config = (object)[
                 <h1><icon>&#xf0e0;</icon>E-Mail</h1><input name="email"></input>
                 <h1><icon>&#xf084;</icon>Password</h1><input name="pass" type="password"></input>
                 <h1><icon>&#xf084;</icon>Password (Repeat)</h1><input name="pass2" type="password"></input>
-                <h1><icon>&#xf00c;</icon>Verification Code</h1><input name="code"></input>
                 <button onclick="action['signup_verify'](this)">Get Verification Code</button>
-                <button onclick="action['signup']()">Signup</button>
-                <p></p>
+                <div id="signup_verify" style="display:none">
+                    <h1><icon>&#xf00c;</icon>Verification Code</h1><input name="code"></input>
+                    <button onclick="action['signup']()">Signup</button>
+                </div>
             </div>
             <div class="login on">
                 <h1><icon>&#xf0e0;</icon>E-Mail</h1><input name="email"></input>

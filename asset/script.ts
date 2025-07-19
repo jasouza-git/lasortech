@@ -3,6 +3,24 @@
 let path = location.pathname.split('/').slice(1);
 
 /* ----- SHORTCUTS ----- */
+/** HTML Code */
+function html(strings, ...values) {
+  return strings.reduce((result, str, i) => {
+    const value = values[i];
+    const safe = String(value).replace(/[&<>"'`]/g, function (char) {
+        const escapeMap = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '`': '&#96;',
+        };
+        return escapeMap[char];
+    });
+    return result + str + (value !== undefined ? safe : '');
+  }, '');
+}
 /** Generate Query Handler */
 function q(code, f=(x,n:number)=>x) {
     return Array.from(document.querySelectorAll(code)).map(f);
@@ -72,17 +90,11 @@ function generateKey() {
 
 /* ----- COMPONENT GENERATOR ----- */
 /** Order Card */
-async function card(data:{
-    create_at:string,
-    description:string,
-    id:string,
-    rms_code:string,
-    update_at:string
-}|null=null, edit?:boolean) {
+async function card(data:any|null=null, edit?:boolean) {
     const out = document.createElement('div');
     if (edit == undefined) edit = data == null;
     const ek = edit?'contenteditable="true"':'';
-    const customers = await api<{
+    const customers = edit ? await api<{
         id:string,
         name:string,
         description:string,
@@ -92,12 +104,13 @@ async function card(data:{
         query: 'customers',
         mode: 'all',
         session_id: getCookie('session')
-    });
+    }) : {data:[]};
     out.classList.add('card');
-    out.classList.add('edit');
+    if (edit) out.classList.add('edit');
+    if (data) out.setAttribute('data', data.id);
     out.innerHTML = /*html*/`
         <div>
-            <h1>${data?data.id:'[ NEW ORDER ]'}</h1>
+            <h1>${data?data.id.slice(0,24)+'...':'[ NEW ORDER ]'}</h1>
             <h2>
                 <span>${dateFormat(data?.update_at)}</span> /
                 <span>${dateFormat(data?.create_at)}</span>
@@ -105,28 +118,45 @@ async function card(data:{
             <div>
                 <table>
                     <tbody><tr><th>Name</th><th>Brand</th><th>Model</th><th>Serial</th><th class="edit">Options</th></tr></tbody>
+                    ${data?data.items.map(x =>
+                        html`<tbody><tr data="${x.id}">
+                            <td>${x.name}</td>
+                            <td>${x.brand}</td>
+                            <td>${x.model}</td>
+                            <td>${x.serial}</td>
+                            <td class="edit"></td>
+                        </tr></tbody>`
+                    ).join(''):''}
                     <tbody><tr class="edit"><div><td colspan="999"><div><button onclick="action['new_item'](this)">+</button></div></div></td></tr></tbody>
                 </table>
             </div>
-            <p ${ek}>${data?data.description:''}</p>
+            <p ${ek}>${data?html`${data.description}`:''}</p>
         </div>
         <div>
             ${edit ? /*html*/`<select>
-                ${customers.data.map(x => `<option value="${x.id}">${x.name}</option>`)}
-            </select>` : `<h1>Customer Name</h2>`}
-            <p>${edit && customers.data.length ? customers.data[0].description : ''}</p>
-            <a class="cn">${edit && customers.data.length ? customers.data[0].contact_number : ''}</a>
-            <a class="em">${edit && customers.data.length ? customers.data[0].email : ''}</a>
+                ${customers.data.map(x => html`<option value="${x.id}">${x.name}</option>`)}
+            </select>` : html`<h1>${data.customer.name}</h2>`}
+            <p>${edit && customers.data.length ? customers.data[0].description : html`${data.customer.description??''}`}</p>
+            <a class="cn">${edit && customers.data.length ? customers.data[0].contact_number : html`${data.customer.contact_number}`}</a>
+            <a class="em">${edit && customers.data.length ? customers.data[0].email : html`${data.customer.email}`}</a>
         </div>
         <div>
-            <div data="0"></div>
-            <p>${data?data.description:'Not yet created'}</p>
+            <div data="${data.state_code}"></div>
+            <p>${data?data.state.label:'Not yet created'}</p>
             <h1>${data?data.rms_code:generateKey()}</h1>
+            ${edit ? '' : /*html*/`<button onclick="action['send_order'](this)">
+                <icon>&#xf0e0;</icon>
+                E-Mail
+            </button>`}
             <button>
                 <icon>&#xf1f8;</icon>
                 Delete
             </button>
-            <button onclick="action['save_order'](this);">
+            <button class="noedit">
+                <icon>&#xf304;</icon>
+                Edit
+            </button>
+            <button class="edit" onclick="action['save_order'](this)">
                 <icon>&#xf0c7;</icon>
                 Save
             </button>
@@ -268,24 +298,50 @@ function row_items(data:{
     if (init) q('#body')[0].appendChild(table);
 }
 /** Asking popup */
-async function pop(tag:string, title:string, msg:string, ops:string[]=[]) {
+async function pop(tag:string, title:string, msg:string, ops:string[]=[], def?:string) {
+    /** Dom wrap to allow animating inserts/removes */
+    const dom_wrap = document.createElement('div');
+    /** Main Dom */
     const dom = document.createElement('div');
-    dom.classList.add(tag);
+    if (tag.length) dom.classList.add(tag);
+    dom_wrap.appendChild(dom);
+    /** Close option? */
+    const close = msg.length > 100 || def !== undefined;
+    /** Remove popup */
+    const remove = () => {
+        dom_wrap.setAttribute('step', '1');
+        setTimeout(() => q('#popup')[0].removeChild(dom_wrap), 250);
+    };
+    /** Content */
     dom.innerHTML = /*html*/`
-        <h1>${title}</h1>
-        <p>${msg}</p>
+        <h1>${title}${close ? `<button onclick="action['popout'](this${def === undefined ? '' : html`, '${def}'`})"><icon>&#xf00d;</icon></button>` : ''}</h1>
+        <p></p>
         ${ops.map(x => /*html*/`<button>${x}</button>`)}
     `;
+    dom.querySelector('p').innerHTML = msg;
+    /** Text Input */
+    const inp = document.createElement('textarea');
+    if (def != undefined) dom.querySelector('p').appendChild(inp);
+    /** Setup button triggers */
     let trig:(x:number)=>void = x=>{};
-    Array.from(dom.querySelectorAll('button')).forEach((x,n) => {
+    Array.from(dom.querySelectorAll(':scope>button')).forEach((x,n) => {
         x.addEventListener('click', y => trig(n));
     })
-    q('#popup')[0].appendChild(dom);
+    /** Add to popups with animation (step=0) */
+    q('#popup')[0].appendChild(dom_wrap);
+    setTimeout(() => dom_wrap.setAttribute('step', '0'), 1);
+    if (def != undefined) setTimeout(() => inp.focus(), 1);
+    /** Remove automatically */
+    if (!close && !ops.length) setTimeout(remove, 5000);
+    /** Throws error if error */
     if (tag == 'error' && !ops.length) return new Error(title+'\n'+msg);
+    /** Capture user input */
     const num:number = await new Promise(res => {
         trig = res;
     });
-    return ops[num];
+    /** Close popup */
+    remove();
+    return [ops[num], inp.value];
 }
 
 /* ------ API REQUESTING ----- */
@@ -318,7 +374,7 @@ async function api<T>(data, cont:(res:any)=>any=()=>{}) {
     const out = cont(res);
     console.log(out);
     if (out !== true && res.errno) {
-        let msg = `Error #${res.errno}`;
+        let msg = res.errorname??`Error #${res.errno}`;
         let dat = res.error??'Unknown';
         throw pop('error', msg, dat);
     }
@@ -341,11 +397,11 @@ async function load(quick=false) {
     // 3. Load content
     if (!quick && d1-d0 < 500) await new Promise(res => setTimeout(res, 500-(d1-d0)));
     q('#new', x => (sub[0] == 'employees' ? x.setAttribute('disabled','') : x.removeAttribute('disabled')));
-    q('#find input[type=checkbox]', x => {
-        const p = x.id.split('_').slice(1);
-        if (p[0] == sub[0] && (sub[1] == 'all' || sub[1] == p[1])) x.setAttribute('checked', '');
-        else x.removeAttribute('checked');
-    });
+    q('#side button', x => {
+        const p = x.getAttribute('data').split('/');
+        if (p[0] == sub[0] && (sub[1] == 'all' || sub[1] == p[1])) x.classList.add('on');
+        else x.classList.remove('on');
+    })
     q('#body', x => x.innerHTML = '');
     if (datas.data != null) {
         if (sub[0] == 'orders') {
@@ -404,7 +460,7 @@ const action = {
         if (!name.length) throw pop('error', 'Missing field', 'Please enter username');
         if (!contact_number.length) throw pop('error', 'Missing field', 'Please enter contact number');
 
-        const res = await api({
+        await api({
             action: 'register',
             password_hashed: await sha256(pass),
             name,
@@ -412,9 +468,7 @@ const action = {
             email,
             email_verification_code: code
         });
-        if (!res.errno) {
-            q('#login>div:last-child>button:nth-child(3)', x=>x.click());
-        } else q('#login .signup>p', x=>x.innerText = 'Error: '+(res.error??'Unknown'));
+        q('#login>div:last-child>button:nth-child(3)', x=>x.click());
     },
     'signup_verify': async (dom) => {
         const email = q('#login .signup input[name=email]')[0].value;
@@ -422,23 +476,27 @@ const action = {
         dom.innerHTML = 'Sending...';
         await api({
             action: 'send_verification_email',
-            email
-        }, () => dom.innerHTML = 'Get Verification Code');
+            email,
+            check_exist: false
+        }, res => dom.innerHTML = res.errno ? 'Try Again' : 'Get Verification Code');
+        q('#signup_verify', x=>x.style.display = 'flex');
+        q('#signup_verify input')[0].focus();
     },
     'login': async () => {
         const email = q('#login .login>[name=email]')[0].value,
             pass = q('#login .login>[name=pass]')[0].value;
-        if (!pass.length || !email.length) return q('#login .login>p', x=>x.innerText = 'Please dont leave blanks!');
+        if (!email.length) throw pop('error', 'Missing data', 'Please enter email!');
+        if (!pass.length) throw pop('error', 'Missing data', 'Please enter password!');
         const res = await api<{create_at:string, id:string, update_at:string, user_id:string}>({
             action: 'login',
             email,
             password_hashed: await sha256(pass)
         });
-        if (!res.errno && res.data != null) {
+        if (res.data != null) {
             document.body.classList.remove('login');
             setCookie('session', res.data.id, 7);
             load();
-        } else q('#login .login>p', x=>x.innerText = 'Error: '+(res.error??'Unknown'));
+        }
     },
     'save_customer': async (dom) => {
         const p = dom.parentNode.parentNode.parentNode;
@@ -448,7 +506,9 @@ const action = {
             email = p.children[2].innerText,
             messenger = p.children[3].innerText,
             descript = p.children[4].innerText;
-        if ([name,contact,email].some(x=>!x.length)) return;
+        if (!name.length) throw pop('error', 'Missing field', 'Enter customer name!');
+        if (!contact.length) throw pop('error', 'Missing field', 'Enter customer contact!');
+        if (!email.length) throw pop('error', 'Missing field', 'Enter customer email!');
         Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
         dom.innerHTML = '&#xe1d4;';
         const rest = api({
@@ -481,6 +541,17 @@ const action = {
             </div></td>
         </tr>`;
         p.parentNode.insertBefore(T, p);
+    },
+    'send_order': async (dom) => {
+        const p = dom.parentNode.parentNode;
+        const msg = await pop('', 'Send E-Mail', 'Enter message to customer', ['cancel','send'], 'cancel');
+        if (msg[0] == 'cancel') return;
+        await api({
+            email: 'order',
+            id: p.getAttribute('data'),
+            message: msg[1],
+            session_id: getCookie('session')
+        });
     },
     'save_order': async (dom) => {
         const p = dom.parentNode.parentNode;
@@ -518,10 +589,12 @@ const action = {
         await api({
             action: 'send_verification_email',
             email,
+            check_exist: true
         }, () => {
             dom.innerHTML = 'Resend Code';
         });
         q('#login_forgot_verify', x=>x.style.display = 'flex');
+        q('#login_forgot_verify input')[0].focus();
     },
     'change_pass': async (dom) => {
         const [email, code, pass] = q('#login_forgot_email,#login_forgot_code,#login_forgot_pass', x=>x.value) as string[];
@@ -541,6 +614,16 @@ const action = {
         q('#login>div:last-child>button:nth-child(3)', x=>x.click());
         q('#login_forgot_sendcode', x=>x.innerHTML = 'Send Verification Code');
         dom.innerHTML = 'Change Password';
+    },
+    'popout': async (dom, def) => {
+        const p = dom.parentNode.parentNode.parentNode;
+        if (def != undefined) Array.from(p.querySelectorAll('button'), (x:HTMLElement)=>{
+            if (x.innerText == def) x.click();
+        });
+        else {
+            p.setAttribute('step', 1);
+            setTimeout(() => p.parentNode.removeChild(p), 250);
+        }
     }
 };
 
@@ -559,28 +642,6 @@ q('#new', x => x.onclick = async () => {
 q('#find_text')[0].onkeyup = q('#search')[0].click = () => load(true);
 
 /** Find filters */
-let change = false;
-q('#find input[type=checkbox]', x => x.addEventListener('change', () => {
-    if (change) return;
-    change = true;
-    let p = x.id.split('_').splice(1);
-    const cs = [];
-    q('#find input[type=checkbox]', y => {
-        if (x == y) return;
-        const p2 = y.id.split('_').slice(1);
-        let c = p[0] != p2[0] ? false : p[1] == 'all' ? x.checked : p2[1] == 'all' ? y.parentElement.nextSibling.children[0].checked && y.parentElement.nextSibling.nextSibling.children[0].checked : y.checked;
-        if (y.checked != c) y.click();
-        if (c) cs.push(y);
-    });
-    if (!x.checked) p = cs.length ? cs[0].id.split('_').slice(1) : null
-    if (p != null) {
-        path = p;
-        load();
-    }
-    change = false;
-    console.log(p);
-}));
-
 q('#side>button', x => x.addEventListener('click', () => {
     let p = x.getAttribute('data').split('/');
     x.classList.toggle('on');
@@ -601,6 +662,24 @@ q('#side>button', x => x.addEventListener('click', () => {
     console.log(path);
 }))
 
+/** Automatic next element on enter */
+q('#login input', x => x.addEventListener('keyup', e => {
+    if (e.keyCode == 13) {
+        let dom = x.nextSibling;
+        let n = 0;
+        while (dom && n != 10) {
+            let bk = true;
+            if (dom.tagName == 'INPUT') dom.focus();
+            else if (dom.tagName == 'BUTTON') dom.click();
+            else bk = false;
+            if (bk) break;
+            dom = dom.nextSibling;
+            n++;
+        }
+        if (n == 10) throw new Error('Failed to find next element');
+    }
+}));
+
 /** Adding event to login buttons */
 q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
     q('#login>div.on,#login>div:last-child>button.on', y=>y.classList.remove('on'));
@@ -618,5 +697,6 @@ onload = async function() {
         await new Promise(res => setTimeout(res, 500));
         q('.t20p_title', x=>x.beginElement());
         document.body.classList.add('login');
+        q('#login .login input[name=email]', x=>x.focus());
     }
 }
