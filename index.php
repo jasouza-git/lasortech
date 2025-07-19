@@ -184,7 +184,12 @@ $config = (object)[
         <div id="login">
             <div id="login_forgot">
                 <h1><icon>&#xf0e0;</icon>E-Mail</h1><input id="login_forgot_email"></input>
-                <button onclick="action['verification']()">Send Verification Code</button>
+                <button id="login_forgot_sendcode" onclick="action['send_code'](this)">Send Verification Code</button>
+                <div id="login_forgot_verify" style="display:none">
+                    <h1><icon>&#xf00c;</icon>Verification Code</h1><input id="login_forgot_code"></input>
+                    <h1><icon>&#xf00c;</icon>New Password</h1><input id="login_forgot_pass" type="pass"></input>
+                    <button onclick="action['change_pass'](this)">Change Password</button>
+                </div>
             </div>
             <div class="signup">
                 <h1><icon>&#xf507;</icon>Name</h1><input name="name"></input>
@@ -192,6 +197,8 @@ $config = (object)[
                 <h1><icon>&#xf0e0;</icon>E-Mail</h1><input name="email"></input>
                 <h1><icon>&#xf084;</icon>Password</h1><input name="pass" type="password"></input>
                 <h1><icon>&#xf084;</icon>Password (Repeat)</h1><input name="pass2" type="password"></input>
+                <h1><icon>&#xf00c;</icon>Verification Code</h1><input name="code"></input>
+                <button onclick="action['signup_verify'](this)">Get Verification Code</button>
                 <button onclick="action['signup']()">Signup</button>
                 <p></p>
             </div>
@@ -208,11 +215,6 @@ $config = (object)[
             </div>
         </div>
         <div id="popup">
-            <div class="warning">
-                <h1>Are you sure you want to delete?</h1>
-                <p>You will be deleting "ABDJFNKJF"</p>
-                <button>No</button><button>Yes</button>
-            </div>
         </div>
         <script src="/script.js"></script>
     </body>

@@ -6,6 +6,12 @@ require_once "insert.php";
 require_once "delete.php";
 use \Mailjet\Resources;
 
+$email = (object) [
+    'public_key' => '533947a9454170d1674c07221018e073',
+    'private_key' => 'd844ad72e858c622ebccf46511e04c75',
+    'email' => 'eqix.experiment@gmail.com'
+];
+
 class Mailer {
 
     private $client;
@@ -14,9 +20,10 @@ class Mailer {
     private $delete;
 
     public function __construct($conn) {
+        global $email;
         $this->client = new \Mailjet\Client(
-            "86d35d141a54c2e7404c0d83de36e1bb", 
-            "72f7d727f47dc29bde660a8e842cf01e",
+            $email->public_key,
+            $email->private_key,
             true,
             ['version' => 'v3.1']
         );
@@ -136,11 +143,12 @@ class Mailer {
     }
 
     public function send(string $to, string $to_name, string $subject, $body) {
+        global $email;
         $body = [
             'Messages' => [
                 [
                     'From' => [
-                        'Email' => "wangchenlin2001@gmail.com",
+                        'Email' => $email->email,
                         'Name' => "Lasortech"
                     ],
                     'To' => [

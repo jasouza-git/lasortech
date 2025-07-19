@@ -1,5 +1,5 @@
 // tsc --watch asset/script.ts --outFile script.js --target ES6 --module system --lib DOM,ES6
-
+/** Current path of page */
 let path = location.pathname.split('/').slice(1);
 
 /* ----- SHORTCUTS ----- */
@@ -71,6 +71,7 @@ function generateKey() {
 
 
 /* ----- COMPONENT GENERATOR ----- */
+/** Order Card */
 async function card(data:{
     create_at:string,
     description:string,
@@ -133,6 +134,7 @@ async function card(data:{
     `;
     return out;
 }
+/** Employee Row */
 function row_employee(data:{
     name:string,
     contact_number:string,
@@ -173,6 +175,7 @@ function row_employee(data:{
     }
     if (init) q('#body')[0].appendChild(table);
 }
+/** Customer Row */
 function row_customer(data:{
     id: string,
     name: string,
@@ -217,6 +220,7 @@ function row_customer(data:{
     }
     if (init) q('#body')[0].appendChild(table);
 }
+/** Item Row */
 function row_items(data:{
     belonged_customer_id:string,
     brand:string,
@@ -263,7 +267,8 @@ function row_items(data:{
     }
     if (init) q('#body')[0].appendChild(table);
 }
-async function ask(tag:string, title:string, msg:string, ops:string[]) {
+/** Asking popup */
+async function pop(tag:string, title:string, msg:string, ops:string[]=[]) {
     const dom = document.createElement('div');
     dom.classList.add(tag);
     dom.innerHTML = /*html*/`
@@ -276,13 +281,14 @@ async function ask(tag:string, title:string, msg:string, ops:string[]) {
         x.addEventListener('click', y => trig(n));
     })
     q('#popup')[0].appendChild(dom);
+    if (tag == 'error' && !ops.length) return new Error(title+'\n'+msg);
     const num:number = await new Promise(res => {
         trig = res;
     });
     return ops[num];
 }
 
-
+/* ------ API REQUESTING ----- */
 /** API Response Type */
 interface res<T> {
     /** Error Number */
@@ -294,7 +300,8 @@ interface res<T> {
     /** Response Data */
     data: null | T
 }
-async function api<T>(data) {
+/** API Request */
+async function api<T>(data, cont:(res:any)=>any=()=>{}) {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(data)) {
         if (Array.isArray(value)) {
@@ -308,6 +315,13 @@ async function api<T>(data) {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: params
     }).then(res=>res.json());
+    const out = cont(res);
+    console.log(out);
+    if (out !== true && res.errno) {
+        let msg = `Error #${res.errno}`;
+        let dat = res.error??'Unknown';
+        throw pop('error', msg, dat);
+    }
     return res as res<T>;
 }
 /** Loads page */
@@ -373,45 +387,43 @@ async function load(quick=false) {
     document.body.classList.remove('load');
     document.body.classList.remove('loading');
 }
-async function dom_save(dom) {
-    const par = dom.parentNode.parentNode.parentNode;
-    const data = {
-        name: par.children[0].innerText,
-        contact_number: par.children[1].innerText,
-        email: par.children[2].innerText,
-        messenger_id: par.children[3].innerText,
-        description: par.children[4].innerText,
-        working: par.children[5].children[0].checked
-    };
-    if (!data.messenger_id.length) delete data.messenger_id;
-    if (!data.description.length) delete data.description;
-    console.log(data);
-    const res = await api({new:'employee', ...data});
-    if (!res.errno) {
-        par.classList.remove('edit');
-        par.children.map(x => x.removeAttribute('contenteditable'));
-    }
-}
 
 /** Actions */
 const action = {
     'signup': async () => {
-        const pass:string[] = q('#login .signup>[name=pass],#login .signup>[name=pass2]', x=>x.value);
-        if (pass[0] != pass[1]) return q('#login .signup>p', x=>x.innerText = 'Passwords do not match!');
-        const name = q('#login .signup>[name=name]')[0].value,
-            contact_number = q('#login .signup>[name=contact]')[0].value,
-            email = q('#login .signup>[name=email]')[0].value;
-        if (!pass[0].length || !name.length || !contact_number.length) return q('#login .signup>p', x=>x.innerText = 'Please dont leave blanks!');
-        const res = await api({
-            action: 'register',
-            password_hashed: await sha256(pass[0]),
+        const [
             name,
             contact_number,
-            email
+            email,
+            pass,
+            pass2,
+            code
+        ] = q('#login .signup input[name]', x=>x.value) as string[];
+        if (pass != pass2) return q('#login .signup>p', x=>pop('error', 'Failed', 'Passwords do not match!'));
+        if (!pass.length) throw pop('error', 'Missing field', 'Please enter password');
+        if (!name.length) throw pop('error', 'Missing field', 'Please enter username');
+        if (!contact_number.length) throw pop('error', 'Missing field', 'Please enter contact number');
+
+        const res = await api({
+            action: 'register',
+            password_hashed: await sha256(pass),
+            name,
+            contact_number,
+            email,
+            email_verification_code: code
         });
         if (!res.errno) {
             q('#login>div:last-child>button:nth-child(3)', x=>x.click());
         } else q('#login .signup>p', x=>x.innerText = 'Error: '+(res.error??'Unknown'));
+    },
+    'signup_verify': async (dom) => {
+        const email = q('#login .signup input[name=email]')[0].value;
+        if (!email.length) throw pop('error', 'Missing Data', 'Please enter email!');
+        dom.innerHTML = 'Sending...';
+        await api({
+            action: 'send_verification_email',
+            email
+        }, () => dom.innerHTML = 'Get Verification Code');
     },
     'login': async () => {
         const email = q('#login .login>[name=email]')[0].value,
@@ -499,12 +511,36 @@ const action = {
         console.log(res);
         //location.reload();
     },
-    'verification': async () => {
+    'send_code': async (dom) => {
         const email = q('#login_forgot_email')[0].value;
-        if (!email.length) throw new Error('Please put email');
-        /*const res = await api({
-            'email' =
-        })*/
+        if (!email.length) throw pop('error', 'Missing Data', 'Please enter email!');
+        dom.innerHTML = 'Sending...';
+        await api({
+            action: 'send_verification_email',
+            email,
+        }, () => {
+            dom.innerHTML = 'Resend Code';
+        });
+        q('#login_forgot_verify', x=>x.style.display = 'flex');
+    },
+    'change_pass': async (dom) => {
+        const [email, code, pass] = q('#login_forgot_email,#login_forgot_code,#login_forgot_pass', x=>x.value) as string[];
+        if (!email.length) throw pop('error', 'Missing Data', 'Please enter email!');
+        if (!code.length) throw pop('error', 'Missing Data', 'Please enter verification code!');
+        if (!pass.length) throw pop('error', 'Missing Data', 'Please enter new password!');
+        dom.innerHTML = 'Changing...';
+        await api({
+            action: 'forgot_password',
+            email,
+            password_hashed: await sha256(pass),
+            email_verification_code: code,
+        }, (res) => {
+            if (res.errno) dom.innerHTML = 'Retry';
+        });
+        q('#login_forgot_verify', x=>x.style.display = 'none');
+        q('#login>div:last-child>button:nth-child(3)', x=>x.click());
+        q('#login_forgot_sendcode', x=>x.innerHTML = 'Send Verification Code');
+        dom.innerHTML = 'Change Password';
     }
 };
 
@@ -574,13 +610,13 @@ q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
 
 /** Onloaded */
 onload = async function() {
-    const user = await api({get:'current', session_id:getCookie('session')});
-    if (user.errno) {
+    const loggedin = getCookie('session') != null ? (await api({get:'current', session_id:getCookie('session')}, ()=>true)).errno == 0 : false;
+    if (loggedin) {
+        await load();
+        q('.t20p_title', x=>x.beginElement());
+    } else {
         await new Promise(res => setTimeout(res, 500));
         q('.t20p_title', x=>x.beginElement());
         document.body.classList.add('login');
-    } else {
-        await load();
-        q('.t20p_title', x=>x.beginElement());
     }
 }
