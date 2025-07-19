@@ -2,12 +2,16 @@
 require 'vendor/autoload.php';
 require_once "basic.php";
 require_once "query.php";
+require_once "insert.php";
+require_once "delete.php";
 use \Mailjet\Resources;
 
 class Mailer {
 
     private $client;
     private $query;
+    private $insert;
+    private $delete;
 
     public function __construct($conn) {
         $this->client = new \Mailjet\Client(
@@ -17,7 +21,45 @@ class Mailer {
             ['version' => 'v3.1']
         );
 
+        $this->client->setConnectionTimeout(30);
+
         $this->query = new DB_QUERY($conn);
+        $this->insert = new DB_INSERT($conn);
+        $this->delete = new DB_DELETE($conn);
+    }
+
+    public function send_verification_code(array $data) {
+        $paras = parameter([
+            "email" => "string"
+        ], $data);
+
+        $code = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
+
+        $replacing = [
+            "{{code}}" => $code
+        ];
+
+        $this->delete->delete([
+                "ids" => [$paras['email']],
+            ], "email_validations", "email");
+
+        $this->insert->email_verification([
+            "email" => $paras["email"],
+            "code" => $code
+        ]);
+
+        $mail_html = file_get_contents(__DIR__ . "/email_validation_code.html");
+
+        foreach ($replacing as $key => $value) {
+            $mail_html = str_replace($key, $value, $mail_html);
+        }
+
+        return $this->send(
+            $paras['email'],
+            "New User",
+            "Your Verification Code from Lasortech",
+            $mail_html
+        );
     }
 
     public function send_order(array $data) {
@@ -29,8 +71,6 @@ class Mailer {
 
         $order_id = $paras['id'];
         $message = $paras['message'] ?? null;
-
-        global $state_appearences;
 
         $orders = $this->query->get_orders_detail([
             "ids" => [$order_id]
@@ -74,20 +114,18 @@ class Mailer {
             "{{customer_email}}" => $order['customer']['email'],
             "{{order_id}}" => substr($order['id'], 0, 20),
             "{{order_rms}}" => $order['rms_code'],
-            "{{order_status}}" => $state_appearences[$order['state_code']][0],
-            "{{state_color}}" => $state_appearences[$order['state_code']][1],
+            "{{order_status}}" => $order['state']['label'],
+            "{{state_color}}" => $order['state']['color'],
             "{{last_update}}" => $order['update_at'],
             "{{items_rows}}" => $item_rows,
             "{{message}}" => $msg
         ];
 
-        $mail_html = file_get_contents(__DIR__ . "/email.html");
+        $mail_html = file_get_contents(__DIR__ . "/email_order.html");
 
         foreach ($replacing as $key => $value) {
             $mail_html = str_replace($key, $value, $mail_html);
         }
-
-        // echo $mail_html;
 
         return $this->send(
             $order['customer']['email'],
