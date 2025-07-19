@@ -25,7 +25,7 @@ class Auth extends DB {
         $users_existed = $query->get([
             "ids" => $register_para['email']
         ], "users", "email");
-        required(count($users_existed) == 0, 25, "user existed");
+        required(count($users_existed) == 0, 25, "SignUp Failed", "user existed.");
 
         $this->verify_email([
             "email" => $register_para['email'],
@@ -54,9 +54,9 @@ class Auth extends DB {
         $users = $query->get([
             "ids" => $login_para['email']
         ], "users", "email");
-        required(count($users) && $users[0], 20, "user not exist");
+        required(count($users) && $users[0], 20, "Login Failed", "user not exist.");
         $user = $users[0];
-        required($login_para['password_hashed'] == $user['password_hashed'], 21, "password incorrect");
+        required($login_para['password_hashed'] == $user['password_hashed'], 21, "Login Failed", "password incorrect.");
 
         $this->conn->begin_transaction();
         $delete->delete([
@@ -86,7 +86,9 @@ class Auth extends DB {
     }
 
     public function auth(array $data) {
-        required(isset($data['session_id']), 26, "not login");
+        $error_title = "Authorization Failed";
+
+        required(isset($data['session_id']), 26, $error_title, "you are not login.");
 
         $query = new DB_QUERY($this->conn);
         $delete = new DB_DELETE($this->conn);
@@ -94,7 +96,7 @@ class Auth extends DB {
         $sessions = $query->get([
             "ids" => $data['session_id']
         ], "sessions");
-        required(count($sessions) && $sessions[0], 23,"session invalid");
+        required(count($sessions) && $sessions[0], 23, $error_title,"login session invalid.");
         $session = $sessions[0];
 
         $last_update = strtotime($session['update_at']);
@@ -105,7 +107,7 @@ class Auth extends DB {
                 "ids" => [$data["session_id"]]
             ], "sessions");
 
-            required(false, 24, "user session expired");
+            required(false, 24, $error_title, "login session expired.");
         }
 
         return true;
@@ -118,12 +120,14 @@ class Auth extends DB {
             "email_verification_code" => "string"
         ], $data);
 
+        $error_title = "Password Reset Failed";
+
         $query = new DB_QUERY($this->conn);
         
         $users = $query->get([
             "ids" => [$reset_para['email']]
         ], "users", "email");
-        required(count($users) && $users[0], 45,"user not exist");
+        required(count($users) && $users[0], 45, $error_title,"user not exist.");
 
         $this->verify_email([
             "email" => $reset_para['email'],
@@ -139,6 +143,9 @@ class Auth extends DB {
     }
 
     public function reset_password(array $data) {
+
+        $error_title = "Password Reset Failed";
+
         $this->auth($data);
 
         $reset_para = parameter([
@@ -157,10 +164,10 @@ class Auth extends DB {
             "ids" => [$user_current['email']]
         ], "users", "email");
 
-        required(count($users) && $users[0], 45,"user not exist");
+        required(count($users) && $users[0], 45, $error_title,"user not exist.");
 
         $user = $users[0];
-        required($user['password_hashed'] == $reset_para['old_password_hashed'], 46, "old password incorrect");
+        required($user['password_hashed'] == $reset_para['old_password_hashed'], 46, $error_title, "old password incorrect.");
 
         return $update->user([
             "email" => $user_current["email"],
@@ -174,17 +181,19 @@ class Auth extends DB {
             "code" => "string"
         ], $data);
 
+        $error_title = "Email Verfy Failed";
+
         $query = new DB_QUERY($this->conn);
         $delete = new DB_DELETE($this->conn);
 
         $verifications = $query->email_verification_code([
             "emails" => [$paras['email']]
         ]);
-        required(count($verifications) && $verifications[0] , 40, "email verification code not sent");
+        required(count($verifications) && $verifications[0] , 40, $error_title, "email verification code not sent.");
 
         $verification = $verifications[0];
 
-        required($verification['code'] == $paras['code'], 41, "verification code incorrect");
+        required($verification['code'] == $paras['code'], 41, $error_title, "verification code incorrect.");
 
         $last_update = strtotime($verification['update_at']);
         $expired = ($last_update + 5 * 60) < time();
@@ -193,7 +202,7 @@ class Auth extends DB {
             "ids" => [$paras['email']],
         ], "email_validations", "email");
         
-        required(!$expired, 42, "email verification code expired");
+        required(!$expired, 42, $error_title, "email verification code expired.");
 
         return true;
     }

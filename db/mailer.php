@@ -37,8 +37,23 @@ class Mailer {
 
     public function send_verification_code(array $data) {
         $paras = parameter([
-            "email" => "string"
+            "email" => "string",
+            "check_exist?" => "bool"
         ], $data);
+
+        $error_title = "Email Verfication Send Failed";
+
+        if (isset($paras['check_exist'])) {
+            $check_exist = $paras['check_exist'];
+            $users_check = $this->query->get([
+                "ids" => $paras['email']
+            ], "users", "email");
+            if ($check_exist) {
+                required(count($users_check) && $users_check[0], 50, $error_title, "user not exist.");
+            } else {
+                required(count($users_check) == 0, 25, $error_title, "user existed.");
+            }
+        }
 
         $code = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
 
@@ -71,6 +86,8 @@ class Mailer {
 
     public function send_order(array $data) {
 
+        $error_title = "Order Email Send Failed";
+
         $paras = parameter([
             "id" => "string",
             "message?" => "string"
@@ -83,7 +100,7 @@ class Mailer {
             "ids" => [$order_id]
         ]);
 
-        required(count($orders) == 1, 100, "order mail cannot send, because order id not valid");
+        required(count($orders) == 1, 100, $error_title, "order id not valid.");
 
         $order = $orders[0];
 
@@ -143,6 +160,10 @@ class Mailer {
     }
 
     public function send(string $to, string $to_name, string $subject, $body) {
+
+        $internal_error_title = "Email Send Failed";
+        $error_title = "Email Send Failed";
+
         global $email;
         $body = [
             'Messages' => [
@@ -164,12 +185,21 @@ class Mailer {
         ];
         $response = $this->client->post(Resources::$Email, ['body' => $body]);
         if (!$response->success()) {
-            $errorInfo = [
-                'status' => $response->getStatus(),
-                'reason' => $response->getReasonPhrase(),
-                'body' => $response->getBody()
-            ];
-            required(false, 30, $errorInfo);
+            $unstruct_error_description = "mail send failed: bad response from mailjet, contact to your admin pls.";
+            $error_body = $response->getBody();
+            required(isset($error_body['Messages']),51, $internal_error_title, $unstruct_error_description);
+            $errors = ["<ul>"];
+            foreach ($error_body['Messages'] as $error_arr) {
+                required(isset($error_arr['Errors']),52, $internal_error_title,$unstruct_error_description);
+                foreach ($error_arr['Errors'] as $error) {
+                    required(isset($error['ErrorMessage']),53, $internal_error_title,$unstruct_error_description);
+                    $errors[] = "<li>" . $error['ErrorMessage'] . "</li>";
+                }
+            }
+            $errors[] = "</ul>";
+            $err_str = implode("", $errors);
+
+            required(false, 30, $error_title, $err_str);
         }
 
         return true;

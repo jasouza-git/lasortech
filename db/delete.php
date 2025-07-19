@@ -7,6 +7,7 @@ class DB_DELETE extends DB {
         required(
             isset($data['ids']) && count($data['ids']) > 0, 
             15, 
+            "Deletion Failed",
             "provide at least one id of $table to delete"
         );
 

@@ -129,7 +129,12 @@ if (isset($_POST["action"])) {
     }
 }
 
-required(property_exists($out, 'data') && $out->data !== null, 17, "not found");
+required(
+    property_exists($out, 'data') && $out->data !== null, 
+    17, 
+    "Bad Request", 
+    "page not found."
+);
 
 header("Content-Type: application/json");
 echo json_encode($out);

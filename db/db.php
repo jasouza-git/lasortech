@@ -17,7 +17,7 @@ class DB {
 
             $conn = new mysqli($servername, $username, $password, $dbname, $port);
             
-            guard( $conn->connect_error, 1);
+            guard( $conn->connect_error, 1, "System Initialize Failed");
 
             $conn->query(<<<SQL
                 CREATE DATABASE IF NOT EXISTS lasortech
@@ -63,7 +63,7 @@ class DB {
             if ($need_init) {
                 $sql = file_get_contents(__DIR__ . "/struct.sql");
                 $res = $conn->multi_query($sql);
-                required($res, 21, "Init SQL failed: " . $conn->error);
+                required($res, 21, "System Initialize Failed", "Init SQL failed: $conn->error");
                 do {
                     if ($result = $conn->store_result()) {
                         $result->free();
@@ -115,7 +115,7 @@ class DB {
             "types" => "s"
         ]);
 
-        required(count($res) == 1, 4, "database insertion failed - query failed");
+        required(count($res) == 1, 4, "Internal Error", "database insertion failed - query failed, contact your admin pls");
         return $res[0];
     }
 
@@ -132,13 +132,13 @@ class DB {
         if (!empty($combined['values'])) {
             $prepare->bind_param($combined['types'], ...$combined['values']);
         }
-        required($prepare->execute(), 7, "database execute falied");
+        required($prepare->execute(), 7, "Internal Error", "database execute falied, contact your admin pls.");
         return $prepare;
     }
 
     protected function get_state_map(int $index) {
         global $state_map;
-        required($index >= 0 && $index <= 7, 9, "state code not valid");
+        required($index >= 0 && $index <= 7, 9, "Internal Error", "database state code not valid, contact your admin pls.");
         return $state_map[$index];
     }
 }

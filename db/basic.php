@@ -11,7 +11,7 @@ function parameter(array $required, array $values) {
             }
         } else {
             if (!isset($values[$key])) {
-                guard( "Missing parameter: " . $key, 2);
+                guard( "Missing parameter: $key", 2, "Internal Error");
             }
         }
 
@@ -28,23 +28,28 @@ function parameter(array $required, array $values) {
     return $res;
 }
 
-function required($value, int $code, $reason = null) {
+function required($value, int $code, string $errorname, string|null $reason = null) {
     if (!$value) { 
         global $out;
         $out->errno = $code;
-        if ($reason) { $out->error = $reason; }
-        else { $out->error = "value get failed"; }
+
+        $out->errorname = $errorname;
+        $out->error = match($reason) {
+            null => "failed, because null value detect, contact your admin pls.",
+            default => $reason
+        };
+
         header("Content-Type: application/json");
         die(json_encode($out));
     }
 }
 
-function guard($error, int $code, string $reason = null) {
+function guard($error, int $code, string $errorname) {
     if ($error) { 
         global $out;
         $out->errno = $code;
         $out->error = $error;
-        if ($reason) { $out->reason = $reason; }
+        $out->errorname = $errorname;
         header("Content-Type: application/json");
         die(json_encode($out));
     }
@@ -211,7 +216,7 @@ function build_update_sql(
     string $table,
     string $custom_id = null
 ) {
-    required(count($values) > 0,10, "provide at least 1 data for update operation");
+    required(count($values) > 0,10, "Bad Request", "provide at least 1 data for update operation.");
 
     $sql = "UPDATE $table\n";
 
@@ -253,7 +258,7 @@ function build_delete_sql(
     string $table,
     string $custom_id = null
 ) {
-    required(count($ids) > 0,10, "provide at least 1 id for delete operation");
+    required(count($ids) > 0,10, "Bad Request", "provide at least 1 id for delete operation.");
 
     $sql = "DELETE FROM $table WHERE ";
 

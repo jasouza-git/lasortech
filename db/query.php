@@ -336,7 +336,7 @@ class DB_QUERY extends DB {
             "types" => "s"
         ]);
 
-        required(count($res) == 1, 25, "session not valid");
+        required(count($res) == 1, 25, "Session Failed", "login session not valid.");
 
         $res = $res[0];
         $res['working'] = (bool)$res['working'];

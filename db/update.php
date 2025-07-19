@@ -4,7 +4,7 @@ require_once "db.php";
 class DB_UPDATE extends DB {
 
     public function employee(array $data) {
-        required(isset($data['id']), 11, "provide the id of employee to modify the data");
+        required(isset($data['id']), 11, "Employee Load Failed", "provide the id of employee to modify the data.");
         $employee = parameter([
             "name?" => "string",
             "contact_number?" => "string",
@@ -19,7 +19,7 @@ class DB_UPDATE extends DB {
     }
 
     public function customer(array $data) {
-        required(isset($data['id']), 12, "provide the id of customer to modify the data");
+        required(isset($data['id']), 12, "Customer Load Failed", "provide the id of customer to modify the data.");
         $customer = parameter([
             "name?" => "string",
             "contact_number?" => "string",
@@ -34,7 +34,7 @@ class DB_UPDATE extends DB {
     }
 
     public function item(array $data) {
-        required(isset($data['id']), 13, "provide the id of item to modify the data");
+        required(isset($data['id']), 13, "Items Load Failed", "provide the id of item to modify the data.");
         $item = parameter([
             "belonged_customer_id?" => "string",
             "brand?" => "string",
@@ -49,7 +49,7 @@ class DB_UPDATE extends DB {
     }
 
     public function order(array $data) {
-        required(isset($data['id']), 14, "provide the id of order to modify the data");
+        required(isset($data['id']), 14, "Orders Load Failed", "provide the id of order to modify the data.");
         $order = parameter([
             "rms_code?" => "string",
             "description?" => "string",
@@ -61,7 +61,7 @@ class DB_UPDATE extends DB {
     }
 
     public function user(array $data) {
-        required(isset($data['email']), 44, "provide the email of user to reset the password");
+        required(isset($data['email']), 44, "Users Load Failed", "provide the email of user to reset the password.");
         $user = parameter([
             "password_hashed" => "string",
         ], $data);
