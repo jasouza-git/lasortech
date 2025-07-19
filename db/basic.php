@@ -55,11 +55,6 @@ function guard($error, int $code, string $errorname) {
     }
 }
 
-// /**
-//  * handle exception if the action() run with error throws
-//  * @param callable $action
-//  * @return string|null: null if no exception, string if have exception
-//  */
 function handleException(callable $action, string $err_reason) {
     try {
         $res = $action();
@@ -69,11 +64,16 @@ function handleException(callable $action, string $err_reason) {
         ];
     } catch (\Exception $e) {
         $reason = str_to_html($e->getTraceAsString());
+        $err_message = str_to_html($e->getMessage());
+
         $trace = str_to_html(<<<REASON
         $err_reason
-        full failure log:
+
+        $err_message
+        
+        full stack trace:
         REASON);
-        $trace .= "<p style=\"margin-left: 24px\">$reason</p>";
+        $trace .= "<p style=\"margin-left: 12px\">$reason</p>";
         return [
             "error" => true,
             "trace" => $trace

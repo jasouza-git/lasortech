@@ -27,7 +27,7 @@ class DB_QUERY extends DB {
         $sql_combined = build_fetch_sql(
             $queries, 
             "SELECT * FROM employees",
-            ["(name LIKE ? OR contact_number LIKE ? OR email LIKE ?)", 3],
+            ["(name LIKE ? OR contact_number LIKE ?)", 2],
             false,
             build_tail_sql($paras),
             fn() => match ($mode) {
@@ -422,6 +422,11 @@ class DB_QUERY extends DB {
         ], $data);
 
         $ids = $paras["ids"];
+
+        if (count($ids) == 0) {
+            return [];
+        }
+
         $placeholders = implode(', ', array_fill(0, count($ids), '?'));
         $types = str_repeat('s', count($ids));
 
@@ -465,11 +470,13 @@ class DB_QUERY extends DB {
         WHERE o.id IN ($placeholders)
         SQL;
 
-        $res = $this->fetch([
+        $combined = [
             "sql" => $sql,
             "values" => $ids,
             "types" => $types
-        ]);
+        ];
+
+        $res = $this->fetch($combined);
 
         $out = [];
         foreach ($res as $row) {
