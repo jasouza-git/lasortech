@@ -80,22 +80,20 @@ class DB_QUERY extends DB {
             $queries,
             <<<SQL
             SELECT o.id FROM orders o
-            JOIN customers c ON i.belonged_customer_id = o.customer_id
-            JOIN users u ON u.id = o.id
+            JOIN customers c ON c.id = o.customer_id
             SQL,
             [<<<SQL
             (
                 o.id LIKE ? OR
                 o.rms_code LIKE ? OR
                 o.description LIKE ? OR
-                u.email LIKE ? OR
                 c.name LIKE ? OR
                 c.email LIKE ? OR
                 c.contact_number LIKE ?
             )
-            SQL, 7],
+            SQL, 6],
             false,
-            build_tail_sql($paras),
+            build_tail_sql($paras, "ORDER BY o.update_at"),
             function() use ($mode) {
                 $joinSQL = <<<SQL
                 JOIN (
@@ -125,12 +123,8 @@ class DB_QUERY extends DB {
             }
         );
 
-        echo $sql_combined['sql'];
-
         $orders = $this->fetch($sql_combined);
-
         $order_ids = array_map(fn($order) => $order['id'], $orders);
-
         $orders_detailed = $this->get_orders_detail([
             "ids" => $order_ids
         ]);
@@ -462,6 +456,7 @@ class DB_QUERY extends DB {
             i.id AS item_id,
             i.brand,
             i.model,
+            i.belonged_customer_id AS item_belonged_customer_id,
             i.serial AS item_serial,
             i.name AS item_name,
             i.update_at AS item_update_at,
@@ -472,7 +467,7 @@ class DB_QUERY extends DB {
         FROM orders o
         JOIN order_item_map oim ON o.id = oim.order_id
         JOIN items i ON oim.item_id = i.id
-        JOIN customers c ON i.belonged_customer_id = c.id
+        JOIN customers c ON o.customer_id = c.id
         LEFT JOIN (
             SELECT p1.*
             FROM procedures p1
@@ -531,6 +526,7 @@ class DB_QUERY extends DB {
                 "id" => $row["item_id"],
                 "brand" => $row["brand"],
                 "model" => $row["model"],
+                "belonged_customer_id" => $row["item_belonged_customer_id"],
                 "serial" => $row["item_serial"],
                 "name" => $row["item_name"],
                 "update_at" => $row["item_update_at"],
