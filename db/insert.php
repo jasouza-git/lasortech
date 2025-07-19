@@ -182,6 +182,7 @@ class DB_INSERT extends DB {
      */
     public function order(array $data) {
         $order = parameter([
+            "customer_id" => "string",
             "rms_code" => "string",
             "description?" => "string",
         ], $data);
@@ -189,6 +190,8 @@ class DB_INSERT extends DB {
         $item_ids = parameter([
             "item_ids" => "string[]"
         ], $data)['item_ids'];
+
+        $this->item_in_order_checks($item_ids, $order['customer_id']);
 
         $this->conn->begin_transaction();
         
@@ -242,6 +245,17 @@ class DB_INSERT extends DB {
             "order_id" => "string"
         ], $data);
 
+        $order_combined = [
+            "sql" => "SELECT * FROM orders WHERE id = ?",
+            "values" => [$items['order_id']],
+            "types" => "s"
+        ];
+
+        $orders = $this->fetch($order_combined);
+        required(count($orders), $orders[0],"Add Item Into Order Failed", "order not exist");
+        $order = $orders[0];
+        $this->item_in_order_checks($items['ids'], $order['customer_id']);
+
         $this->conn->begin_transaction();
         foreach ($items['ids'] as $id) {
             $combined = build_insert_sql([
@@ -263,6 +277,27 @@ class DB_INSERT extends DB {
 
         $combined = build_insert_sql($codes, "email_validations");
         $this->insert($combined, true);
+        return true;
+    }
+
+    public function item_in_order_checks(array $item_ids, string $customer_id) {
+        $item_ids_placeholder = implode(", ", array_fill(0, count($item_ids),"?"));
+        
+        $item_id_check_combined = [
+            "sql" => <<<SQL
+                SELECT COUNT(*) AS count
+                FROM items
+                WHERE id IN ($item_ids_placeholder)
+                AND belonged_customer_id = ?
+                SQL,
+            "values" => array_merge($item_ids, [$customer_id]),
+            "types" => str_repeat("s", count($item_ids) + 1),
+        ];
+
+        $count = $this->fetch($item_id_check_combined)[0]['count'];
+
+        required($count == count($item_ids), 60, "Bad Request", "An order can only contain items from a single customer.");
+
         return true;
     }
 }

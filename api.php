@@ -108,6 +108,19 @@ $result = handleException(function () {
             };
 
             $out->data = $res;
+        } else if (isset($_POST["count"])) {
+            $get = $_POST['count'];
+            $db = new DB_QUERY($db->conn);
+            $res = match ($get) {
+                'employees'     => $db->get_record_count("employees"),
+                'items'         => $db->get_record_count("items"),
+                'customers'     => $db->get_record_count("customers"),
+                'orders'        => $db->get_record_count("orders"),
+                'states'        => $db->get_record_count("procedures"),
+                default         => null,
+            };
+
+            $out->data = $res;
         } else if (isset($_POST["email"])) {
             $paras = $_POST["email"];
             $db = new Mailer($db->conn);

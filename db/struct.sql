@@ -66,7 +66,8 @@ CREATE TABLE `order_item_map` (
 
 CREATE TABLE `orders` (
 	`id` varchar(64) NOT NULL,
-	`rms_code` varchar(35),
+	`customer_id` varchar(64) NOT NULL,
+	`rms_code` varchar(35) NOT NULL,
 	`description` text,
 	`update_at` timestamp(6) NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP(6),
 	`create_at` timestamp(6) NOT NULL DEFAULT (now()),
@@ -120,6 +121,7 @@ ALTER TABLE `employees` ADD CONSTRAINT `employees_id_users_id_fk` FOREIGN KEY (`
 ALTER TABLE `items` ADD CONSTRAINT `items_belonged_customer_id_customers_id_fk` FOREIGN KEY (`belonged_customer_id`) REFERENCES `customers`(`id`) ON DELETE cascade ON UPDATE no action;
 ALTER TABLE `order_item_map` ADD CONSTRAINT `order_item_map_order_id_orders_id_fk` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE cascade ON UPDATE no action;
 ALTER TABLE `order_item_map` ADD CONSTRAINT `order_item_map_item_id_items_id_fk` FOREIGN KEY (`item_id`) REFERENCES `items`(`id`) ON DELETE cascade ON UPDATE no action;
+ALTER TABLE `orders` ADD CONSTRAINT `orders_customer_id_customers_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE cascade ON UPDATE no action;
 ALTER TABLE `procedures` ADD CONSTRAINT `procedures_order_id_orders_id_fk` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE cascade ON UPDATE no action;
 ALTER TABLE `sessions` ADD CONSTRAINT `sessions_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE cascade ON UPDATE no action;
 ALTER TABLE `state_incompletes` ADD CONSTRAINT `state_incompletes_state_id_procedures_id_fk` FOREIGN KEY (`state_id`) REFERENCES `procedures`(`id`) ON DELETE cascade ON UPDATE no action;
