@@ -392,7 +392,7 @@ table
     position: relative
     display: grid
     grid-template-columns: auto 5*$u
-    grid-template-rows: auto 0.5*$u
+    grid-template-rows: auto 0 0.5*$u
     margin: 0.25*$u
     height: 4*$u
     border: 0.01*$u solid #555
@@ -473,10 +473,14 @@ table
                 text-align: right
                 &::after
                     content: '\f0e0'
-    /* INFO */
+    /** STATUS */
     &>div:nth-child(3)
-        display: flex
         grid-area: 2 / 1 / span 1 / span 2
+        background-color: #555
+    /* INFO */
+    &>div:nth-child(4)
+        display: flex
+        grid-area: 3 / 1 / span 1 / span 2
         background-color: #555
         z-index: 0
         div
@@ -513,13 +517,15 @@ table
     &.edit
         .noedit
             display: none
+    &.order
+        grid-template-rows: auto auto 0.5*$u
 
 /* ----- LOGIN/SIGNUP ----- */
 #login
     position: fixed
-    left: calc(50% - 50vmin + $u)
+    left: calc(50% - 37.5vmin + $u)
     bottom: $u
-    width: calc(100vmin - 2*$u)
+    width: calc(75vh - 2*$u)
     height: calc(75% - 2*$u)
     background-color: #ddd
     border-radius: 0.25*$u
@@ -584,7 +590,7 @@ table
             border: 0
             flex-grow: 1
             color: #fff
-            height: 0.5*$u
+            height: 100%
             transition: background-color $t, box-shadow $t, color $t
             &+button
                 border-left: 0.01*$u solid #333
@@ -611,6 +617,7 @@ table
     right: 0.2*$u
     bottom: 0.2*$u
     width: 6*$u
+    max-width: calc(100% - 0.4*$u)
     z-index: 3
     &>div
         overflow: visible
@@ -720,3 +727,21 @@ body.login
         pointer-events: auto !important
         &>div:not(:last-child).on
             pointer-events: auto
+
+@media (orientation: portrait)
+    #login
+        left: $u
+        bottom: calc(37.5% - 50vw + $u)
+        width: calc(100% - 2*$u)
+        height: calc(100vw - 2*$u)
+
+@media screen and (max-width: 475px)
+    #login
+        grid-template-rows: auto $u
+@media screen and (max-width: 600px)
+    @media (orientation: portrait)
+        #login
+            left: 0.25*$u
+            bottom: calc(37.5% - 50vw + 0.25*$u)
+            width: calc(100% - 0.5*$u)
+            height: calc(100vw - 0.5*$u)

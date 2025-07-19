@@ -38,6 +38,8 @@ $config = (object)[
     <head>
         <title>LasorTech RMA</title>
         <link rel="stylesheet" type="text/css" href="/style.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="theme-color" content="#ee0000">
     </head>
     <body class="load">
         <?php echo file_get_contents('logo.xml') ?>
@@ -206,7 +208,7 @@ $config = (object)[
             <div class="login on">
                 <h1><icon>&#xf0e0;</icon>E-Mail</h1><input name="email"></input>
                 <h1><icon>&#xf084;</icon>Password</h1><input name="pass" type="password"></input>
-                <button onclick="action['login']()">Login</button>
+                <button onclick="action['login'](this)">Login</button>
                 <p></p>
             </div>
             <div>

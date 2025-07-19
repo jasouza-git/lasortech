@@ -124,7 +124,9 @@ async function card(data:any|null=null, edit?:boolean) {
                             <td>${x.brand}</td>
                             <td>${x.model}</td>
                             <td>${x.serial}</td>
-                            <td class="edit"></td>
+                            <td class="edit"><div>
+                                <button onclick="action['order_item_delete'](this)">&#xe2b4;</button>
+                            </div></td>
                         </tr></tbody>`
                     ).join(''):''}
                     <tbody><tr class="edit"><div><td colspan="999"><div><button onclick="action['new_item'](this)">+</button></div></div></td></tr></tbody>
@@ -141,18 +143,21 @@ async function card(data:any|null=null, edit?:boolean) {
             <a class="em">${edit && customers.data.length ? customers.data[0].email : html`${data.customer.email}`}</a>
         </div>
         <div>
-            <div data="${data.state_code}"></div>
-            <p>${data?data.state.label:'Not yet created'}</p>
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean vitae lectus et justo pretium ullamcorper nec vel mauris. Vestibulum placerat tellus sit amet urna auctor elementum. Maecenas imperdiet feugiat velit, ut sodales dui consectetur vel. Suspendisse in dignissim ipsum, ac rutrum diam. Aenean et suscipit quam. Nulla at odio eu erat finibus pellentesque. Proin porttitor, velit vel bibendum aliquet, augue nulla cursus eros, sit amet consectetur purus metus finibus eros. Mauris volutpat, est sit amet consequat luctus, augue urna efficitur nunc, in placerat lorem ipsum non ligula. Nulla sagittis leo dictum, cursus lorem eu, fermentum felis. Curabitur bibendum libero et blandit viverra. Donec in nisl nec odio pulvinar venenatis in vel ipsum. Maecenas ut ullamcorper lacus. Nulla facilisi. Integer finibus faucibus sapien, in tempor urna ullamcorper id. Curabitur quam turpis, aliquam et luctus eget, vulputate vitae purus. Curabitur vulputate metus ut semper mollis.
+        </div>
+        <div>
+            <div data="${data?data.state_code:''}"></div>
+            <p onclick="action['order_state'](this)">${data?data.state.label:'Not yet created'}</p>
             <h1>${data?data.rms_code:generateKey()}</h1>
-            ${edit ? '' : /*html*/`<button onclick="action['send_order'](this)">
+            <button class="noedit" onclick="action['send_order'](this)">
                 <icon>&#xf0e0;</icon>
                 E-Mail
-            </button>`}
+            </button>
             <button>
                 <icon>&#xf1f8;</icon>
                 Delete
             </button>
-            <button class="noedit">
+            <button class="noedit" onclick="action['edit_order'](this)">
                 <icon>&#xf304;</icon>
                 Edit
             </button>
@@ -384,8 +389,11 @@ async function api<T>(data, cont:(res:any)=>any=()=>{}) {
 async function load(quick=false) {
     // 1. Prepare request
     const d0 = Number(new Date());
+    let perpage = Number(q('#tabs div[contenteditable="true"]', x=>x.innerText)[0]??'10');
+    if (Number.isNaN(perpage)) perpage = 10;
     if (!quick) document.body.classList.add('loading');
     const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
+    path = sub;
     // 2. Request to API
     const datas = await api<any[]>({
         query:sub[0],
@@ -435,6 +443,11 @@ async function load(quick=false) {
             </div>
         `);
     }
+    q('#tabs', x => x.innerHTML = /*html*/`
+        <button class="on">1</button>
+        <button>2</button>
+        <div contenteditable="true">${perpage}</div>
+    `);
     
     // 4. Remove Animation
     if (!quick) {
@@ -446,6 +459,15 @@ async function load(quick=false) {
 
 /** Actions */
 const action = {
+    'password_check': (pass:string) => {
+        const req = [];
+        console.log(pass);
+        // Minimum eight characters, at least one letter and one number
+        if (pass.length < 8) req.push('Minimum eight character');
+        if (!/[0-9]/g.test(pass) || pass.match(/[0-9]/g).length < 1) req.push('At least one number');
+        if (!/[a-zA-Z]/g.test(pass) || pass.match(/[a-zA-Z]/g).length < 1) req.push('At least one letter');
+        if (req.length) throw pop('error', 'Invalid Password', `Please fulfill the following requirements:<ul>${req.map(x=>`<li>${x}</li>`)}</ul>`);
+    },
     'signup': async () => {
         const [
             name,
@@ -459,6 +481,7 @@ const action = {
         if (!pass.length) throw pop('error', 'Missing field', 'Please enter password');
         if (!name.length) throw pop('error', 'Missing field', 'Please enter username');
         if (!contact_number.length) throw pop('error', 'Missing field', 'Please enter contact number');
+        action['password_check'](pass);
 
         await api({
             action: 'register',
@@ -482,16 +505,17 @@ const action = {
         q('#signup_verify', x=>x.style.display = 'flex');
         q('#signup_verify input')[0].focus();
     },
-    'login': async () => {
+    'login': async (dom) => {
         const email = q('#login .login>[name=email]')[0].value,
             pass = q('#login .login>[name=pass]')[0].value;
         if (!email.length) throw pop('error', 'Missing data', 'Please enter email!');
         if (!pass.length) throw pop('error', 'Missing data', 'Please enter password!');
+        dom.innerHTML = 'Logging in...';
         const res = await api<{create_at:string, id:string, update_at:string, user_id:string}>({
             action: 'login',
             email,
             password_hashed: await sha256(pass)
-        });
+        }, (res) => dom.innerHTML = res.errno ? 'Retry Login' : 'Login');
         if (res.data != null) {
             document.body.classList.remove('login');
             setCookie('session', res.data.id, 7);
@@ -537,11 +561,12 @@ const action = {
             <td ${ek}></td>
             <td ${ek}></td>
             <td class="edit"><div>
-                <button>&#xe2b4;</button>
+                <button onclick="action['order_item_delete'](this)">&#xe2b4;</button>
             </div></td>
         </tr>`;
         p.parentNode.insertBefore(T, p);
     },
+    /*---- ORDERS ----- */
     'send_order': async (dom) => {
         const p = dom.parentNode.parentNode;
         const msg = await pop('', 'Send E-Mail', 'Enter message to customer', ['cancel','send'], 'cancel');
@@ -552,6 +577,14 @@ const action = {
             message: msg[1],
             session_id: getCookie('session')
         });
+    },
+    'edit_order': async (dom) => {
+        const p = dom.parentNode.parentNode;
+        p.classList.add('edit');
+        p.classList.remove('order');
+        Array.from(p.querySelectorAll(':scope>div:first-child>p')).forEach((x:HTMLElement) => {
+            x.setAttribute('contenteditable', 'true');
+        })
     },
     'save_order': async (dom) => {
         const p = dom.parentNode.parentNode;
@@ -601,6 +634,7 @@ const action = {
         if (!email.length) throw pop('error', 'Missing Data', 'Please enter email!');
         if (!code.length) throw pop('error', 'Missing Data', 'Please enter verification code!');
         if (!pass.length) throw pop('error', 'Missing Data', 'Please enter new password!');
+        action['password_check'](pass);
         dom.innerHTML = 'Changing...';
         await api({
             action: 'forgot_password',
@@ -624,11 +658,15 @@ const action = {
             p.setAttribute('step', 1);
             setTimeout(() => p.parentNode.removeChild(p), 250);
         }
+    },
+    'order_state': async () => {
+
     }
 };
 
 /** New Action */
 q('#new', x => x.onclick = async () => {
+    console.log(path);
     if (path[0] == 'customers') {
         row_customer(null,true);
     } else if (path[0] == 'employee') {
