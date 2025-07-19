@@ -17,7 +17,8 @@ date_default_timezone_set('UTC');
 
 $out = (object) [ "errno" => 0 ];
 
-try {
+$result = handleException(function () {
+    global $out;
     if (isset($_POST["action"])) {
         $action = $_POST["action"];
         $db = new Auth();
@@ -135,8 +136,10 @@ try {
         "Bad Request", 
         "page not found."
     );
-} catch (Exception $error) {
-    required(false, 55, "Internal Failed", $error->getMessage());
+}, "internal exception caused.");
+
+if ($result['error']) {
+    required(false, 55, "Internal Failed", $result['trace']);
 }
 
 header("Content-Type: application/json");

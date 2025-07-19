@@ -55,6 +55,32 @@ function guard($error, int $code, string $errorname) {
     }
 }
 
+// /**
+//  * handle exception if the action() run with error throws
+//  * @param callable $action
+//  * @return string|null: null if no exception, string if have exception
+//  */
+function handleException(callable $action, string $err_reason) {
+    try {
+        $res = $action();
+        return [
+            "error" => false,
+            "result" => $res
+        ];
+    } catch (\Exception $e) {
+        $reason = str_to_html($e->getTraceAsString());
+        $trace = str_to_html(<<<REASON
+        $err_reason
+        full failure log:
+        REASON);
+        $trace .= "<p style=\"margin-left: 24px\">$reason</p>";
+        return [
+            "error" => true,
+            "trace" => $trace
+        ];
+    }
+}
+
 function combine_filters(
     array $queries, 
     bool $specified_keywords,
@@ -292,4 +318,13 @@ function build_tail_sql(
     }
 
     return $sql;
+}
+
+function str_to_html(string $str) {
+    $str = htmlspecialchars($str);
+    $str = str_replace("\t", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    $str = str_replace("\r", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    $str = str_replace("\n", '<br/>', $str);
+    $str = str_replace("    ", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    return $str;
 }

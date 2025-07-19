@@ -183,7 +183,18 @@ class Mailer {
                 ]
             ]
         ];
-        $response = $this->client->post(Resources::$Email, ['body' => $body]);
+
+        $post_res = handleException(
+            fn() => $this->client->post(Resources::$Email, ['body' => $body]),
+            "possible cause - no internet connectivity. please verify network settings."
+        );
+
+        if ($post_res["error"]) {
+            required(false, 56, $error_title, $post_res['trace']);
+        } else {
+            $response = $post_res['result'];
+        }
+
         if (!$response->success()) {
             $unstruct_error_description = "mail send failed: bad response from mailjet, contact to your admin pls.";
             $error_body = $response->getBody();
@@ -196,6 +207,7 @@ class Mailer {
                     $errors[] = "<li>" . $error['ErrorMessage'] . "</li>";
                 }
             }
+            
             $errors[] = "</ul>";
             $err_str = implode("", $errors);
 

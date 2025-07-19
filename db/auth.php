@@ -181,7 +181,7 @@ class Auth extends DB {
             "code" => "string"
         ], $data);
 
-        $error_title = "Email Verfication Failed";
+        $error_title = "Email Verification Failed";
 
         $query = new DB_QUERY($this->conn);
         $delete = new DB_DELETE($this->conn);
