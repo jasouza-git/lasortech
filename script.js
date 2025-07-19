@@ -83,10 +83,10 @@ async function card(data = null, edit) {
     out.classList.add('edit');
     out.innerHTML = /*html*/ `
         <div>
-            <h1>${data ? data.order_id : '[ NEW ORDER ]'}</h1>
+            <h1>${data ? data.id : '[ NEW ORDER ]'}</h1>
             <h2>
-                <span>${dateFormat(data === null || data === void 0 ? void 0 : data.update)}</span> /
-                <span>${dateFormat(data === null || data === void 0 ? void 0 : data.create)}</span>
+                <span>${dateFormat(data === null || data === void 0 ? void 0 : data.update_at)}</span> /
+                <span>${dateFormat(data === null || data === void 0 ? void 0 : data.create_at)}</span>
             </h2>
             <div>
                 <table>
@@ -106,8 +106,8 @@ async function card(data = null, edit) {
         </div>
         <div>
             <div data="0"></div>
-            <p>${data ? data.status : 'Not yet created'}</p>
-            <h1>${data ? data.rms : generateKey()}</h1>
+            <p>${data ? data.description : 'Not yet created'}</p>
+            <h1>${data ? data.rms_code : generateKey()}</h1>
             <button>
                 <icon>&#xf1f8;</icon>
                 Delete
@@ -136,10 +136,9 @@ function row_employee(data = null, edit) {
         <th>Working</th>
         <th>Options</th>
     </tr>`;
-    const end = (_b = q('#body>table tbody.empty')[0]) !== null && _b !== void 0 ? _b : document.createElement('tbody');
-    if (!q('#body>table tbody.empty').length) {
-        end.classList.add('empty');
-        end.innerHTML = '<tr><td colspan="99999">Empty</th></tr>';
+    const end = (_b = q('#body>table tbody:has(tr.empty)')[0]) !== null && _b !== void 0 ? _b : document.createElement('tbody');
+    if (!q('#body>table tbody:has(tr.empty)').length) {
+        end.innerHTML = '<tr class="empty"><td colspan="99999">Empty</th></tr>';
         table.appendChild(end);
     }
     if (data != null) {
@@ -152,7 +151,6 @@ function row_employee(data = null, edit) {
             <td><input type="checkbox" ${edit ? '' : 'disabled'}${data.working ? ' checked' : ''}/></td>
             <td><div>
                 <button>&#xe2b4;</button>
-                <button>&#xf304;</button>
             </div></td>
         </tr>`;
         table.insertBefore(row, end);
@@ -198,6 +196,62 @@ function row_customer(data = null, edit) {
     if (init)
         q('#body')[0].appendChild(table);
 }
+function row_items(data = null, edit) {
+    var _a, _b, _c, _d, _e, _f;
+    const init = q('#body>table').length ? false : true;
+    const table = (_a = q('#body>table')[0]) !== null && _a !== void 0 ? _a : document.createElement('table');
+    const ek = edit ? 'contenteditable="true"' : '';
+    if (init)
+        table.innerHTML += /*html*/ `<tr>
+        <th>Name</th>
+        <th>Brand</th>
+        <th>Model</th>
+        <th>Serial</th>
+        <th>Owner</th>
+        <th>Options</th>
+    </tr>`;
+    const end = (_b = q('#body>table tbody:has(tr.empty)')[0]) !== null && _b !== void 0 ? _b : document.createElement('tbody');
+    if (!q('#body>table tbody:has(tr.empty)').length) {
+        end.innerHTML = '<tr class="empty"><td colspan="99999">Empty</th></tr>';
+        table.appendChild(end);
+    }
+    if (data != null || edit) {
+        const row = document.createElement('tbody');
+        row.innerHTML = /*html*/ `<tr ${(data === null || data === void 0 ? void 0 : data.id) ? `data="${data.id}"` : ''}>
+            <td ${ek}>${(_c = data === null || data === void 0 ? void 0 : data.name) !== null && _c !== void 0 ? _c : ''}</td>
+            <td ${ek}>${(_d = data === null || data === void 0 ? void 0 : data.brand) !== null && _d !== void 0 ? _d : ''}</td>
+            <td ${ek}>${(_e = data === null || data === void 0 ? void 0 : data.model) !== null && _e !== void 0 ? _e : ''}</td>
+            <td ${ek}>${(_f = data === null || data === void 0 ? void 0 : data.serial) !== null && _f !== void 0 ? _f : ''}</td>
+            <td ${ek}>${(data === null || data === void 0 ? void 0 : data.belonged_customer_id) ? `<a href="/user/${data === null || data === void 0 ? void 0 : data.belonged_customer_id}">User</a>` : 'Unknown'}</td>
+            <td><div>
+                <button>&#xe2b4;</button>
+                ${edit ? `<button onclick="action['save_item'](this)">+</button>` :
+            '<button onclick="action[\'edit\'](this,\'save_customer\')">&#xf304;</button>'}
+            </div></td>
+        </tr>`;
+        table.insertBefore(row, end);
+    }
+    if (init)
+        q('#body')[0].appendChild(table);
+}
+async function ask(tag, title, msg, ops) {
+    const dom = document.createElement('div');
+    dom.classList.add(tag);
+    dom.innerHTML = /*html*/ `
+        <h1>${title}</h1>
+        <p>${msg}</p>
+        ${ops.map(x => /*html*/ `<button>${x}</button>`)}
+    `;
+    let trig = x => { };
+    Array.from(dom.querySelectorAll('button')).forEach((x, n) => {
+        x.addEventListener('click', y => trig(n));
+    });
+    q('#popup')[0].appendChild(dom);
+    const num = await new Promise(res => {
+        trig = res;
+    });
+    return ops[num];
+}
 async function api(data) {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(data)) {
@@ -222,7 +276,7 @@ async function load(quick = false) {
     const d0 = Number(new Date());
     if (!quick)
         document.body.classList.add('loading');
-    const sub = [path.length > 0 && path[0].length ? path[0] : 'order', path.length > 1 && path[1].length ? path[1] : 'all'];
+    const sub = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
     // 2. Request to API
     const datas = await api(Object.assign({ query: sub[0], mode: sub[1], session_id: getCookie('session') }, (q('#find_text')[0].value.length ? { keywords: q('#find_text')[0].value.split(' ') } : {})));
     const d1 = Number(new Date());
@@ -247,6 +301,10 @@ async function load(quick = false) {
         else if (sub[0] == 'customers') {
             row_customer();
             datas.data.map(x => row_customer(x));
+        }
+        else if (sub[0] == 'items') {
+            row_items();
+            datas.data.map(x => row_items(x));
         }
         else {
             for (const data of datas.data)
@@ -394,6 +452,14 @@ const action = {
         });
         console.log(res);
         //location.reload();
+    },
+    'verification': async () => {
+        const email = q('#login_forgot_email')[0].value;
+        if (!email.length)
+            throw new Error('Please put email');
+        /*const res = await api({
+            'email' =
+        })*/
     }
 };
 /** New Action */
@@ -437,6 +503,29 @@ q('#find input[type=checkbox]', x => x.addEventListener('change', () => {
     change = false;
     console.log(p);
 }));
+q('#side>button', x => x.addEventListener('click', () => {
+    let p = x.getAttribute('data').split('/');
+    x.classList.toggle('on');
+    const cs = [];
+    q('#side>button', y => {
+        if (x == y)
+            return;
+        console.log(y);
+        const p2 = y.getAttribute('data').split('/');
+        let c = p[0] != p2[0] ? false : p[1] == 'all' ? x.classList.contains('on') : p2[1] == 'all' ? y.nextSibling.classList.contains('on') && y.nextSibling.nextSibling.classList.contains('on') : y.classList.contains('on');
+        if (y.classList.contains('on') != c)
+            y.classList.toggle('on');
+        if (c)
+            cs.push(y);
+    });
+    if (!x.classList.contains('on'))
+        p = cs.length ? cs[0].getAttribute('data').split('/') : null;
+    if (p != null) {
+        path = p;
+        load();
+    }
+    console.log(path);
+}));
 /** Adding event to login buttons */
 q('#login>div:last-child>button', (x, n) => x.addEventListener('click', () => {
     q('#login>div.on,#login>div:last-child>button.on', y => y.classList.remove('on'));
@@ -446,12 +535,13 @@ q('#login>div:last-child>button', (x, n) => x.addEventListener('click', () => {
 /** Onloaded */
 onload = async function () {
     const user = await api({ get: 'current', session_id: getCookie('session') });
-    await new Promise(res => setTimeout(res, 500));
-    q('.t20p_title', x => x.beginElement());
     if (user.errno) {
+        await new Promise(res => setTimeout(res, 500));
+        q('.t20p_title', x => x.beginElement());
         document.body.classList.add('login');
     }
     else {
         await load();
+        q('.t20p_title', x => x.beginElement());
     }
 };

@@ -45,10 +45,10 @@ $config = (object)[
             <?php
                 foreach ($config->navigate as $name => $options) {
                     echo '<p>' . $name . ':</p>';
+                    echo '<button data="' . strtolower($name) . '/all">All</button>';
                     foreach ($options as $index => $value) {
-                        echo '<button>' . $value . '</button>';
+                        echo '<button data="' . strtolower($name) . '/' . strtolower($value) . '">' . $value . '</button>';
                     }
-                    echo '<button>All</button>';
                 }
             ?>
         </div>
@@ -184,7 +184,7 @@ $config = (object)[
         <div id="login">
             <div id="login_forgot">
                 <h1><icon>&#xf0e0;</icon>E-Mail</h1><input id="login_forgot_email"></input>
-                <button>Send Verification Code</button>
+                <button onclick="action['verification']()">Send Verification Code</button>
             </div>
             <div class="signup">
                 <h1><icon>&#xf507;</icon>Name</h1><input name="name"></input>
@@ -205,6 +205,13 @@ $config = (object)[
                 <button><icon>&#xe243;</icon>Forgot Password</button>
                 <button><icon>&#xf234;</icon>Signup</button>
                 <button class="on"><icon>&#xf2f6;</icon>Login</button>
+            </div>
+        </div>
+        <div id="popup">
+            <div class="warning">
+                <h1>Are you sure you want to delete?</h1>
+                <p>You will be deleting "ABDJFNKJF"</p>
+                <button>No</button><button>Yes</button>
             </div>
         </div>
         <script src="/script.js"></script>

@@ -134,8 +134,11 @@ body::before, #head::after
         transition: background-color $t
         &+button
             border-top-width: 0
-        &:hover
+        &:not(.on):hover
             background-color: #5556
+        &.on
+            background-color: #888
+            color: #333
     p+button
         border-radius: 0.1*$u 0.1*$u 0 0
     button:has(+ p), button:last-child
@@ -270,7 +273,7 @@ table
         display: none
         td
             text-align: center
-    tbody:last-child tr.empty
+    tbody:nth-child(2) tr.empty
         display: table-row
     button
         width: 100%
@@ -592,8 +595,59 @@ table
                 box-shadow: inset 0 0 0 #0005
                 color: #333
             
-            
-
+/* POPUP */
+#popup
+    position: fixed
+    right: 0.2*$u
+    bottom: 0.2*$u
+    width: 6*$u
+    z-index: 3
+    &>div
+        position: relative
+        border: 0.02*$u solid #333
+        display: flex
+        flex-wrap: wrap
+        h1, p
+            flex-grow: 1
+            width: 100%
+        h1
+            margin: 0
+            padding: 0.2*$u
+            background-color: #444
+            font-size: 0.3*$u
+        p
+            margin: 0
+            padding: 0.2*$u
+            background-color: #ddd
+            color: #333
+        button
+            flex-grow: 1
+            border: 0
+            background-color: #333
+            height: 0.3*$u
+            color: #fff
+            border-left: 0.02*$u solid #555
+            border-right: 0.02*$u solid #111
+        &::before
+            content: ''
+            position: absolute
+            left: -0.05*$u
+            top: -0.05*$u
+            width: calc(100% + 0.08*$u)
+            height: calc(100% + 0.08*$u)
+            border: 0.02*$u solid #333
+            background-color: #ddd
+            z-index: -1
+        &.warning
+            border-color: #a33
+            h1
+                background-color: #a33
+            button
+                background-color: #a33
+                border-left-color: #c55
+                border-right-color: #811
+            &::before
+                border-color: #a33
 /* ----- BEFORE LOADED ----- */
 body.load
     overflow: hidden

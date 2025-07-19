@@ -72,12 +72,11 @@ function generateKey() {
 
 /* ----- COMPONENT GENERATOR ----- */
 async function card(data:{
-    order_id:string,
-    update:string,
-    create:string,
-    rms:string,
-    status:string,
-    description:string
+    create_at:string,
+    description:string,
+    id:string,
+    rms_code:string,
+    update_at:string
 }|null=null, edit?:boolean) {
     const out = document.createElement('div');
     if (edit == undefined) edit = data == null;
@@ -97,10 +96,10 @@ async function card(data:{
     out.classList.add('edit');
     out.innerHTML = /*html*/`
         <div>
-            <h1>${data?data.order_id:'[ NEW ORDER ]'}</h1>
+            <h1>${data?data.id:'[ NEW ORDER ]'}</h1>
             <h2>
-                <span>${dateFormat(data?.update)}</span> /
-                <span>${dateFormat(data?.create)}</span>
+                <span>${dateFormat(data?.update_at)}</span> /
+                <span>${dateFormat(data?.create_at)}</span>
             </h2>
             <div>
                 <table>
@@ -120,8 +119,8 @@ async function card(data:{
         </div>
         <div>
             <div data="0"></div>
-            <p>${data?data.status:'Not yet created'}</p>
-            <h1>${data?data.rms:generateKey()}</h1>
+            <p>${data?data.description:'Not yet created'}</p>
+            <h1>${data?data.rms_code:generateKey()}</h1>
             <button>
                 <icon>&#xf1f8;</icon>
                 Delete
@@ -153,10 +152,9 @@ function row_employee(data:{
         <th>Working</th>
         <th>Options</th>
     </tr>`;
-    const end = q('#body>table tbody.empty')[0]??document.createElement('tbody');
-    if (!q('#body>table tbody.empty').length) {
-        end.classList.add('empty');
-        end.innerHTML = '<tr><td colspan="99999">Empty</th></tr>';
+    const end = q('#body>table tbody:has(tr.empty)')[0]??document.createElement('tbody');
+    if (!q('#body>table tbody:has(tr.empty)').length) {
+        end.innerHTML = '<tr class="empty"><td colspan="99999">Empty</th></tr>';
         table.appendChild(end);
     }
     if (data != null) {
@@ -169,7 +167,6 @@ function row_employee(data:{
             <td><input type="checkbox" ${edit ? '' : 'disabled'}${data.working ? ' checked' : ''}/></td>
             <td><div>
                 <button>&#xe2b4;</button>
-                <button>&#xf304;</button>
             </div></td>
         </tr>`;
         table.insertBefore(row, end);
@@ -220,6 +217,70 @@ function row_customer(data:{
     }
     if (init) q('#body')[0].appendChild(table);
 }
+function row_items(data:{
+    belonged_customer_id:string,
+    brand:string,
+    create_at:string,
+    id:string,
+    model:string,
+    name:string,
+    serial:string,
+    update_at:string
+}|null = null, edit?:boolean) {
+    const init = q('#body>table').length ? false : true;
+    const table = q('#body>table')[0]??document.createElement('table');
+    const ek = edit ? 'contenteditable="true"' : '';
+    if (init) table.innerHTML += /*html*/`<tr>
+        <th>Name</th>
+        <th>Brand</th>
+        <th>Model</th>
+        <th>Serial</th>
+        <th>Owner</th>
+        <th>Options</th>
+    </tr>`;
+    const end = q('#body>table tbody:has(tr.empty)')[0]??document.createElement('tbody');
+    if (!q('#body>table tbody:has(tr.empty)').length) {
+        end.innerHTML = '<tr class="empty"><td colspan="99999">Empty</th></tr>';
+        table.appendChild(end);
+    }
+    if (data != null || edit) {
+        const row = document.createElement('tbody');
+        row.innerHTML = /*html*/`<tr ${data?.id ? `data="${data.id}"` : ''}>
+            <td ${ek}>${data?.name??''}</td>
+            <td ${ek}>${data?.brand??''}</td>
+            <td ${ek}>${data?.model??''}</td>
+            <td ${ek}>${data?.serial??''}</td>
+            <td ${ek}>${data?.belonged_customer_id?`<a href="/user/${data?.belonged_customer_id}">User</a>`:'Unknown'}</td>
+            <td><div>
+                <button>&#xe2b4;</button>
+                ${
+                    edit ? `<button onclick="action['save_item'](this)">+</button>` :
+                    '<button onclick="action[\'edit\'](this,\'save_customer\')">&#xf304;</button>'
+                }
+            </div></td>
+        </tr>`;
+        table.insertBefore(row, end);
+    }
+    if (init) q('#body')[0].appendChild(table);
+}
+async function ask(tag:string, title:string, msg:string, ops:string[]) {
+    const dom = document.createElement('div');
+    dom.classList.add(tag);
+    dom.innerHTML = /*html*/`
+        <h1>${title}</h1>
+        <p>${msg}</p>
+        ${ops.map(x => /*html*/`<button>${x}</button>`)}
+    `;
+    let trig:(x:number)=>void = x=>{};
+    Array.from(dom.querySelectorAll('button')).forEach((x,n) => {
+        x.addEventListener('click', y => trig(n));
+    })
+    q('#popup')[0].appendChild(dom);
+    const num:number = await new Promise(res => {
+        trig = res;
+    });
+    return ops[num];
+}
 
 
 /** API Response Type */
@@ -254,7 +315,7 @@ async function load(quick=false) {
     // 1. Prepare request
     const d0 = Number(new Date());
     if (!quick) document.body.classList.add('loading');
-    const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'order', path.length > 1 && path[1].length ? path[1] : 'all'];
+    const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
     // 2. Request to API
     const datas = await api<any[]>({
         query:sub[0],
@@ -280,6 +341,9 @@ async function load(quick=false) {
         } else if (sub[0] == 'customers') {
             row_customer();
             datas.data.map(x=>row_customer(x));
+        } else if (sub[0] == 'items') {
+            row_items();
+            datas.data.map(x=>row_items(x));
         } else {
             for (const data of datas.data) row_employee(data as {
                 id: string 
@@ -434,6 +498,13 @@ const action = {
         });
         console.log(res);
         //location.reload();
+    },
+    'verification': async () => {
+        const email = q('#login_forgot_email')[0].value;
+        if (!email.length) throw new Error('Please put email');
+        /*const res = await api({
+            'email' =
+        })*/
     }
 };
 
@@ -474,6 +545,26 @@ q('#find input[type=checkbox]', x => x.addEventListener('change', () => {
     console.log(p);
 }));
 
+q('#side>button', x => x.addEventListener('click', () => {
+    let p = x.getAttribute('data').split('/');
+    x.classList.toggle('on');
+    const cs = [];
+    q('#side>button', y => {
+        if (x == y) return;
+        console.log(y);
+        const p2 = y.getAttribute('data').split('/');
+        let c = p[0] != p2[0] ? false : p[1] == 'all' ? x.classList.contains('on') : p2[1] == 'all' ? y.nextSibling.classList.contains('on') && y.nextSibling.nextSibling.classList.contains('on') : y.classList.contains('on');
+        if (y.classList.contains('on') != c) y.classList.toggle('on');
+        if (c) cs.push(y);
+    });
+    if (!x.classList.contains('on')) p = cs.length ? cs[0].getAttribute('data').split('/') : null
+    if (p != null) {
+        path = p;
+        load();
+    }
+    console.log(path);
+}))
+
 /** Adding event to login buttons */
 q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
     q('#login>div.on,#login>div:last-child>button.on', y=>y.classList.remove('on'));
@@ -484,11 +575,12 @@ q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
 /** Onloaded */
 onload = async function() {
     const user = await api({get:'current', session_id:getCookie('session')});
-    await new Promise(res => setTimeout(res, 500));
-    q('.t20p_title', x=>x.beginElement());
     if (user.errno) {
+        await new Promise(res => setTimeout(res, 500));
+        q('.t20p_title', x=>x.beginElement());
         document.body.classList.add('login');
     } else {
         await load();
+        q('.t20p_title', x=>x.beginElement());
     }
 }
