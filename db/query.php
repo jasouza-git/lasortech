@@ -78,8 +78,22 @@ class DB_QUERY extends DB {
 
         $sql_combined = build_fetch_sql(
             $queries,
-            "SELECT o.* FROM orders o",
-            ["(o.id like ? or o.rms_code like ? or o.description like ?)", 3],
+            <<<SQL
+            SELECT o.id FROM orders o
+            JOIN customers c ON i.belonged_customer_id = o.customer_id
+            JOIN users u ON u.id = o.id
+            SQL,
+            [<<<SQL
+            (
+                o.id LIKE ? OR
+                o.rms_code LIKE ? OR
+                o.description LIKE ? OR
+                u.email LIKE ? OR
+                c.name LIKE ? OR
+                c.email LIKE ? OR
+                c.contact_number LIKE ?
+            )
+            SQL, 7],
             false,
             build_tail_sql($paras),
             function() use ($mode) {
@@ -110,6 +124,8 @@ class DB_QUERY extends DB {
                 };
             }
         );
+
+        echo $sql_combined['sql'];
 
         $orders = $this->fetch($sql_combined);
 
@@ -558,5 +574,15 @@ class DB_QUERY extends DB {
         }
         unset($state);
         return $states;
+    }
+
+    public function get_record_count(string $table) {
+        $combined = [
+            "sql" => "SELECT COUNT(*) AS count FROM $table",
+            "values" => [],
+            "types" => ""
+        ];
+
+        return $this->fetch($combined)[0];
     }
 }

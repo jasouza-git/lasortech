@@ -182,6 +182,7 @@ class DB_INSERT extends DB {
      */
     public function order(array $data) {
         $order = parameter([
+            "customer_id" => "string",
             "rms_code" => "string",
             "description?" => "string",
         ], $data);
