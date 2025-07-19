@@ -11,7 +11,7 @@ function parameter(array $required, array $values) {
             }
         } else {
             if (!isset($values[$key])) {
-                guard( "Missing parameter: $key", 2, "Internal Error");
+                guard( "Missing parameter: $key", 2, "Bad Request");
             }
         }
 

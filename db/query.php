@@ -317,13 +317,7 @@ class DB_QUERY extends DB {
         $sql = <<<SQL
         SELECT 
             u.email,
-            e.id,
-            e.name,
-            e.contact_number,
-            e.messenger_id,
-            e.avatar,
-            e.description,
-            e.working
+            e.*
         FROM sessions s
         JOIN users u ON s.user_id = u.id
         JOIN employees e ON u.id = e.id
@@ -436,14 +430,21 @@ class DB_QUERY extends DB {
             o.id AS order_id,
             o.rms_code,
             o.description AS order_description,
+            c.id AS customer_id,
             c.name AS customer_name,
             c.contact_number AS customer_contact_number,
             c.email AS customer_email,
+            c.messenger_id AS customer_messenger_id,
+            c.description AS customer_description,
+            c.update_at AS customer_update_at,
+            c.create_at AS customer_create_at,
             i.id AS item_id,
             i.brand,
             i.model,
             i.serial AS item_serial,
             i.name AS item_name,
+            i.update_at AS item_update_at,
+            i.create_at AS item_create_at,
             p.id AS state_id,
             p.state_code,
             p.update_at
@@ -490,9 +491,14 @@ class DB_QUERY extends DB {
                     "state" => $state_data,
                     "update_at" => $row["update_at"],
                     "customer" => [
-                        "name" => $row["customer_name"],
-                        "email" => $row["customer_email"],
-                        "contact_number" => $row["customer_contact_number"]
+                        "id" => $row['customer_id'],
+                        "name" => $row['customer_name'],
+                        "contact_number" => $row['customer_contact_number'],
+                        "email" => $row['customer_email'],
+                        "messenger_id" => $row['customer_messenger_id'],
+                        "description" => $row['customer_description'],
+                        "update_at" => $row['customer_update_at'],
+                        "create_at" => $row['customer_create_at']
                     ],
                     "items" => []
                 ];
@@ -503,7 +509,9 @@ class DB_QUERY extends DB {
                 "brand" => $row["brand"],
                 "model" => $row["model"],
                 "serial" => $row["item_serial"],
-                "name" => $row["item_name"]
+                "name" => $row["item_name"],
+                "update_at" => $row["item_update_at"],
+                "create_at" => $row["item_create_at"]
             ];
         }
 
@@ -514,7 +522,6 @@ class DB_QUERY extends DB {
         $paras = parameter([
             "order_ids" => "string[]"
         ], $data);
-
 
         $ids = $paras["order_ids"];
         $placeholders = implode(', ', array_fill(0, count($ids), '?'));
