@@ -153,7 +153,7 @@ class Mailer {
         $replacing = [
             "{{customer_name}}" => $order['customer']['name'],
             "{{customer_email}}" => $order['customer']['email'],
-            "{{order_id}}" => substr($order['id'], 0, 20),
+            "{{order_id}}" => $order['id'],
             "{{order_rms}}" => $order['rms_code'],
             "{{order_status}}" => $order['state']['label'],
             "{{state_color}}" => $order['state']['color'],

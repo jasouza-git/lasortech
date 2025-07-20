@@ -196,7 +196,8 @@ class DB_INSERT extends DB {
 
         $this->conn->begin_transaction();
         
-        $combined = build_insert_sql($order, "orders");
+        $order['id'] = random_readable_order_id();
+        $combined = build_insert_sql($order, "orders", "id");
         
         $res = $this->insert($combined);
 

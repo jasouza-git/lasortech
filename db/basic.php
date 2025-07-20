@@ -151,6 +151,32 @@ function build_insert_sql(
     return $res;
 }
 
+function random_readable_order_id(): string {
+    $prefix = 'ORD';
+    $datePart = date('Ymd');
+    $letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';  // no I and O
+    $numbers = '23456789';  // no 0 and 1
+
+    $generateSegment = function($length) use ($letters, $numbers) {
+        $result = '';
+        for ($i = 0; $i < $length; $i++) {
+            $result .= (rand(0, 1) === 0) 
+                ? $letters[rand(0, strlen($letters) - 1)] 
+                : $numbers[rand(0, strlen($numbers) - 1)];
+        }
+        return $result;
+    };
+
+    return sprintf(
+        '%s-%s-%s-%s-%s',
+        $prefix,
+        $datePart,
+        $generateSegment(5),
+        $generateSegment(5),
+        $generateSegment(5)
+    );
+}
+
 /**
  * build SELECT SQL statement using such parameters
  * @param array $keywords: the keywords want search
