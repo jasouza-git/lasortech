@@ -151,6 +151,32 @@ function build_insert_sql(
     return $res;
 }
 
+function random_readable_order_id(): string {
+    $prefix = 'ORD';
+    $datePart = date('Ymd');
+    $letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';  // no I and O
+    $numbers = '23456789';  // no 0 and 1
+
+    $generateSegment = function($length) use ($letters, $numbers) {
+        $result = '';
+        for ($i = 0; $i < $length; $i++) {
+            $result .= (rand(0, 1) === 0) 
+                ? $letters[rand(0, strlen($letters) - 1)] 
+                : $numbers[rand(0, strlen($numbers) - 1)];
+        }
+        return $result;
+    };
+
+    return sprintf(
+        '%s-%s-%s-%s-%s',
+        $prefix,
+        $datePart,
+        $generateSegment(5),
+        $generateSegment(5),
+        $generateSegment(5)
+    );
+}
+
 /**
  * build SELECT SQL statement using such parameters
  * @param array $keywords: the keywords want search
@@ -310,7 +336,7 @@ function build_tail_sql(
     $sql = $order_sql;
 
     $page = $page_data['page'] ?? null;
-    $count = $page_data['count'] ?? null;
+    $count = $page_data['count_per_page'] ?? null;
 
     if ($page !== null && $count !== null) {
         $offset = $count * $page;
@@ -320,11 +346,35 @@ function build_tail_sql(
     return $sql;
 }
 
+function make_combined_using_ids(array|null $ids, callable $sql_builder) {
+    $ids ??= [];
+
+    $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+
+    $result = $sql_builder($placeholders);
+    $placeholder_call_times = $result['placeholder_count'];
+    $sql = $result['sql'];
+
+    $types = str_repeat('s', $placeholder_call_times * count($ids));
+    $values = [];
+
+    for ($i = 0; $i < $placeholder_call_times; $i++) {
+        $values = array_merge($values, $ids);
+    }
+
+    return [
+        "sql" => $sql,
+        "values" => $values,
+        "types" => $types
+    ];
+}
+
 function str_to_html(string $str) {
+    $indents = str_repeat("&nbsp;", 4);
     $str = htmlspecialchars($str);
-    $str = str_replace("\t", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
-    $str = str_replace("\r", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    $str = str_replace("\t", $indents, $str);
+    $str = str_replace("\r", $indents, $str);
     $str = str_replace("\n", '<br/>', $str);
-    $str = str_replace("    ", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    $str = str_replace("    ", $indents, $str);
     return $str;
 }

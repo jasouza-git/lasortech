@@ -78,18 +78,30 @@ $result = handleException(function () {
             };
 
             $out->data = $res;
+        } else if (isset($_POST['fetch'])) {
+            $fetch = $_POST['fetch'];
+            $db = new DB_QUERY($db->conn);
+            $res = match ($fetch) {
+                'orders'        => $db->fetch_orders($_POST),
+                'employees'     => $db->fetch_employees($_POST),
+                'items'         => $db->fetch_items($_POST),
+                'customers'     => $db->fetch_customers($_POST),
+                'states'        => $db->fetch_states($_POST),
+                default         => null,
+            };
+
+            $out->data = $res;
         } else if (isset($_POST['get'])) {
             $get = $_POST['get'];
             $db = new DB_QUERY($db->conn);
             $res = match ($get) {
                 'current'       => $db->get_current($_POST),
-                'items_of_order'=> $db->get_items_in_order($_POST),
-                'order_detail'  => $db->get_orders_detail($_POST),
-                'employee'      => $db->get_employees($_POST),
-                'item'          => $db->get($_POST, "items"),
-                'customer'      => $db->get($_POST, "customers"),
-                'order'         => $db->get($_POST, "orders"),
-                'state'         => $db->get_states($_POST),
+                'orders'        => $db->get($_POST, "orders"),
+                'users'         => $db->get_users($_POST),
+                'employees'     => $db->get_employees($_POST),
+                'items'         => $db->get($_POST, "items"),
+                'customers'     => $db->get($_POST, "customers"),
+                'states'        => $db->get_states($_POST),
                 default         => null,
             };
 
@@ -127,6 +139,7 @@ $result = handleException(function () {
 
             $res = match ($paras) {
                 'order'         => $db->send_order($_POST),
+                'any'           => $db->send_email($_POST),
                 default         => null
             };
 
