@@ -73,7 +73,6 @@ $config = (object)[
                 }
             ?>
             <button id="search"></button>
-            <button id="new"></button>
         </div>
         <div id="body">
             <table>

@@ -94,18 +94,13 @@ async function card(data:any|null=null, edit?:boolean) {
     const out = document.createElement('div');
     if (edit == undefined) edit = data == null;
     const ek = edit?'contenteditable="true"':'';
-    const customers = edit ? await api<{
-        id:string,
-        name:string,
-        description:string,
-        contact_number:string,
-        email:string
-    }[]>({
-        query: 'customers',
-        mode: 'all',
-        session_id: getCookie('session')
-    }) : {data:[]};
+    const state = data ? data.state_code : 0;
+    const state_map = [[1],[2,4,5],[],[6],[6],[],[],[1,2,3,4,5,6]];
     out.classList.add('card');
+    if (!data) {
+        out.setAttribute('stage', '1');
+        setTimeout(()=>out.removeAttribute('stage'), 250);
+    }
     if (edit) out.classList.add('edit');
     if (data) out.setAttribute('data', data.id);
     out.innerHTML = /*html*/`
@@ -134,26 +129,46 @@ async function card(data:any|null=null, edit?:boolean) {
             </div>
             <p ${ek}>${data?html`${data.description}`:''}</p>
         </div>
-        <div>
-            ${edit ? /*html*/`<select>
-                ${customers.data.map(x => html`<option value="${x.id}">${x.name}</option>`)}
-            </select>` : html`<h1>${data.customer.name}</h2>`}
-            <p>${edit && customers.data.length ? customers.data[0].description : html`${data.customer.description??''}`}</p>
-            <a class="cn">${edit && customers.data.length ? customers.data[0].contact_number : html`${data.customer.contact_number}`}</a>
-            <a class="em">${edit && customers.data.length ? customers.data[0].email : html`${data.customer.email}`}</a>
+        <div ${data?`data="${data.customer.id}"` : ''}>
+            <select class="edit" onchange="action['load_order_customer'](this)"></select>
+            <h1 class="noedit">${data?html`${data.customer.name}`:''}</h1>
+            <p>${data?html`${data.customer.description}`:''}</p>
+            <a class="cn">${data?html`${data.customer.contact_number}`:''}</a>
+            <a class="em">${data?html`${data.customer.email}`:''}</a>
         </div>
         <div>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean vitae lectus et justo pretium ullamcorper nec vel mauris. Vestibulum placerat tellus sit amet urna auctor elementum. Maecenas imperdiet feugiat velit, ut sodales dui consectetur vel. Suspendisse in dignissim ipsum, ac rutrum diam. Aenean et suscipit quam. Nulla at odio eu erat finibus pellentesque. Proin porttitor, velit vel bibendum aliquet, augue nulla cursus eros, sit amet consectetur purus metus finibus eros. Mauris volutpat, est sit amet consequat luctus, augue urna efficitur nunc, in placerat lorem ipsum non ligula. Nulla sagittis leo dictum, cursus lorem eu, fermentum felis. Curabitur bibendum libero et blandit viverra. Donec in nisl nec odio pulvinar venenatis in vel ipsum. Maecenas ut ullamcorper lacus. Nulla facilisi. Integer finibus faucibus sapien, in tempor urna ullamcorper id. Curabitur quam turpis, aliquam et luctus eget, vulputate vitae purus. Curabitur vulputate metus ut semper mollis.
+            <!--<div>
+                <div class="state" data="0"></div>
+                <span class="date">July 21, 2025 01:17 PM</span>
+                <span class="employee">Mavrick</span>
+            </div>
+            <div>
+                <div class="state" data="1"></div>
+                <span class="date">July 21, 2025 01:37 PM</span>
+                <span class="employee">Jason C. D'Souza</span>
+                <p>PC Build Wanted</p>
+            </div>
+            <div>
+                <div>
+                    <div class="state" data="2"></div>
+                </div>
+                <div>
+                    <div class="state" data="4"></div>
+                </div>
+                <div>
+                    <div class="state" data="5"></div>
+                </div>
+            </div>-->
         </div>
         <div>
-            <div data="${data?data.state_code:''}"></div>
-            <p onclick="action['order_state'](this)">${data?data.state.label:'Not yet created'}</p>
+            <div class="state" data="${data?data.state_code:''}" onclick="action['manage_order'](this)"></div>
+            <!--<p onclick="action['order_state'](this)">${data?data.state.label:'Not yet created'}</p>-->
             <h1>${data?data.rms_code:generateKey()}</h1>
             <button class="noedit" onclick="action['send_order'](this)">
                 <icon>&#xf0e0;</icon>
                 E-Mail
             </button>
-            <button>
+            <button onclick="action['delete_order'](this)">
                 <icon>&#xf1f8;</icon>
                 Delete
             </button>
@@ -244,11 +259,9 @@ function row_customer(data:{
             <td ${ek}>${data?.messenger_id??''}</td>
             <td ${ek}>${data?.description??''}</td>
             <td><div>
-                <button>&#xe2b4;</button>
-                ${
-                    edit ? `<button onclick="action['save_customer'](this)">+</button>` :
-                    '<button onclick="action[\'edit\'](this,\'save_customer\')">&#xf304;</button>'
-                }
+                <button onclick="action['delete_customer'](this)">&#xe2b4;</button>
+                <button class="edit" onclick="action['save_customer'](this)">+</button>
+                <button class="noedit" onclick="action['edit'](this,'save_customer')">&#xf304;</button>
             </div></td>
         </tr>`;
         table.insertBefore(row, end);
@@ -386,7 +399,7 @@ async function api<T>(data, cont:(res:any)=>any=()=>{}) {
     return res as res<T>;
 }
 /** Loads page */
-async function load(quick=false) {
+async function load(quick=false, page:number=0) {
     // 1. Prepare request
     const d0 = Number(new Date());
     let perpage = Number(q('#tabs div[contenteditable="true"]', x=>x.innerText)[0]??'10');
@@ -394,31 +407,42 @@ async function load(quick=false) {
     if (!quick) document.body.classList.add('loading');
     const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
     path = sub;
-    // 2. Request to API
+    // 2. Get number of datas for proper page identification
+    const count = (await api<{count:number}>({
+        query:sub[0],
+        mode:sub[1],
+        session_id:getCookie('session'),
+        ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {}),
+        get_count_only:true
+    })).data.count;
+    // 3. Request to API
     const datas = await api<any[]>({
         query:sub[0],
         mode:sub[1],
         session_id:getCookie('session'),
+        page,
+        count_per_page: perpage,
         ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {})
     });
     const d1 = Number(new Date());
-    // 3. Load content
+    // 4. Load content
     if (!quick && d1-d0 < 500) await new Promise(res => setTimeout(res, 500-(d1-d0)));
-    q('#new', x => (sub[0] == 'employees' ? x.setAttribute('disabled','') : x.removeAttribute('disabled')));
     q('#side button', x => {
         const p = x.getAttribute('data').split('/');
         if (p[0] == sub[0] && (sub[1] == 'all' || sub[1] == p[1])) x.classList.add('on');
         else x.classList.remove('on');
-    })
+    });
+    const newbutton = document.createElement('button');
+    newbutton.setAttribute('onclick', 'action["new"](this)');
     q('#body', x => x.innerHTML = '');
     if (datas.data != null) {
         if (sub[0] == 'orders') {
-            for (const data of datas.data) {
-                q('#body')[0].appendChild(await card(data));
-            }
+            for (const data of datas.data) q('#body')[0].appendChild(await card(data));
+            q('#body')[0].appendChild(newbutton);
         } else if (sub[0] == 'customers') {
             row_customer();
             datas.data.map(x=>row_customer(x));
+            q('#body')[0].appendChild(newbutton);
         } else if (sub[0] == 'items') {
             row_items();
             datas.data.map(x=>row_items(x));
@@ -444,9 +468,10 @@ async function load(quick=false) {
         `);
     }
     q('#tabs', x => x.innerHTML = /*html*/`
-        <button class="on">1</button>
-        <button>2</button>
-        <div contenteditable="true">${perpage}</div>
+        ${Array(Math.ceil(count/perpage)).fill(0).map((_,x)=>/*html*/`
+            <button ${x == page ? 'class="on"' : `onclick="load(false,${x})"`}>${x+1}</button>
+        `)}
+        <div contenteditable="true" onkeyup="load(true)">${perpage}</div>
     `);
     
     // 4. Remove Animation
@@ -522,29 +547,6 @@ const action = {
             load();
         }
     },
-    'save_customer': async (dom) => {
-        const p = dom.parentNode.parentNode.parentNode;
-        const id = p.getAttribute('data')??'',
-            name = p.children[0].innerText,
-            contact = p.children[1].innerText,
-            email = p.children[2].innerText,
-            messenger = p.children[3].innerText,
-            descript = p.children[4].innerText;
-        if (!name.length) throw pop('error', 'Missing field', 'Enter customer name!');
-        if (!contact.length) throw pop('error', 'Missing field', 'Enter customer contact!');
-        if (!email.length) throw pop('error', 'Missing field', 'Enter customer email!');
-        Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
-        dom.innerHTML = '&#xe1d4;';
-        const rest = api({
-            ...(id.length ? { update:'customer', id } : {new:'customer'}),
-            name, contact_number:contact, email,
-            ...(messenger.length ? {messenger_id:messenger} : {}),
-            ...(descript.length ? {description:descript} : {}),
-            session_id:getCookie('session')
-        });
-        dom.innerHTML = '&#xf304;';
-        dom.onclick = () => action['edit'](dom,'save_customer');
-    },
     'edit': async (dom, com) => {
         const p = dom.parentNode.parentNode.parentNode;
         Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.setAttribute('contenteditable',''));
@@ -565,55 +567,6 @@ const action = {
             </div></td>
         </tr>`;
         p.parentNode.insertBefore(T, p);
-    },
-    /*---- ORDERS ----- */
-    'send_order': async (dom) => {
-        const p = dom.parentNode.parentNode;
-        const msg = await pop('', 'Send E-Mail', 'Enter message to customer', ['cancel','send'], 'cancel');
-        if (msg[0] == 'cancel') return;
-        await api({
-            email: 'order',
-            id: p.getAttribute('data'),
-            message: msg[1],
-            session_id: getCookie('session')
-        });
-    },
-    'edit_order': async (dom) => {
-        const p = dom.parentNode.parentNode;
-        p.classList.add('edit');
-        p.classList.remove('order');
-        Array.from(p.querySelectorAll(':scope>div:first-child>p')).forEach((x:HTMLElement) => {
-            x.setAttribute('contenteditable', 'true');
-        })
-    },
-    'save_order': async (dom) => {
-        const p = dom.parentNode.parentNode;
-        const As:any[] = Array.from(p.children[0].querySelectorAll('tbody:not(:first-child):not(:last-child)'));
-        const id = p.querySelector('select').value;
-        const ids = [];
-        for (const A of As) {
-            console.log(A);
-            const res = await api<{id:string}>({
-                new: 'item',
-                session_id: getCookie('session'),
-                belonged_customer_id: id,
-                name: A.querySelector('td:nth-child(1)').innerText,
-                brand: A.querySelector('td:nth-child(2)').innerText,
-                model: A.querySelector('td:nth-child(3)').innerText,
-                serial: A.querySelector('td:nth-child(4)').innerText,
-            });
-            if (res.errno) throw new Error(res.error??'Unknown');
-            ids.push(res.data.id);
-        }
-        const res = await api({
-            new: 'order',
-            rms_code: p.children[2].querySelector('h1').innerText,
-            description: p.children[0].querySelector('p').innerHTML,
-            item_ids: ids,
-            session_id: getCookie('session')
-        });
-        console.log(res);
-        //location.reload();
     },
     'send_code': async (dom) => {
         const email = q('#login_forgot_email')[0].value;
@@ -659,22 +612,251 @@ const action = {
             setTimeout(() => p.parentNode.removeChild(p), 250);
         }
     },
-    'order_state': async () => {
-
+    'new': async (dom) => {
+        console.log(path);
+        if (path[0] == 'customers') {
+            row_customer(null,true);
+        } else if (path[0] == 'employee') {
+            row_employee();
+        } else if (path[0] == 'orders') {
+            const c = await card();
+            q('#body')[0].insertBefore(c, dom);
+            await action['load_order_customer'](c);
+        }
+    },
+    /* ----- CUSTOMERS ----- */
+    'delete_customer': async (dom) => {
+        const p = dom.parentNode.parentNode.parentNode;
+        if (p.hasAttribute('data')) {
+            const [confirm] = await pop('warning', 'Delete?', 'Delete customer?', ['no', 'yes']) as string[];
+            if (confirm == 'no') return;
+            await api({
+                delete: 'customers',
+                ids: [p.getAttribute('data')],
+                session_id: getCookie('session'),
+            });
+        }
+        p.parentElement.removeChild(p);
+    },
+    'save_customer': async (dom) => {
+        const p = dom.parentNode.parentNode.parentNode;
+        const id = p.getAttribute('data')??'',
+            name = p.children[0].innerText,
+            contact = p.children[1].innerText,
+            email = p.children[2].innerText,
+            messenger = p.children[3].innerText,
+            descript = p.children[4].innerText;
+        if (!name.length) throw pop('error', 'Missing field', 'Enter customer name!');
+        if (!contact.length) throw pop('error', 'Missing field', 'Enter customer contact!');
+        if (!email.length) throw pop('error', 'Missing field', 'Enter customer email!');
+        Array.from(p.querySelectorAll(':scope>td:not(:has(>div)):not(:has(>input))')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
+        dom.innerHTML = '&#xe1d4;';
+        const rest = api({
+            ...(id.length ? { update:'customer', id } : {new:'customer'}),
+            name, contact_number:contact, email,
+            ...(messenger.length ? {messenger_id:messenger} : {}),
+            ...(descript.length ? {description:descript} : {}),
+            session_id:getCookie('session')
+        });
+        dom.innerHTML = '&#xf304;';
+        dom.onclick = () => action['edit'](dom,'save_customer');
+    },
+    /* ----- ORDERS ----- */
+    'delete_order': async (dom) => {
+        const p = dom.parentNode.parentNode;
+        if (p.hasAttribute('data')) {
+            const confirm = await pop('warning', 'Delete Order?', 'Are you sure you want to delete order?', ['no','yes']);
+            if (confirm[0] == 'no') return;
+            await api({
+                delete: 'orders',
+                ids: [p.getAttribute('data')],
+                session_id: getCookie('session')
+            });
+        }
+        p.setAttribute('stage', '1');
+        setTimeout(()=>{
+            p.setAttribute('stage', '2');
+            setTimeout(() => p.parentNode.removeChild(p), 250);
+        }, 250);
+    },
+    'send_order': async (dom) => {
+        const p = dom.parentNode.parentNode;
+        const msg = await pop('', 'Send E-Mail', 'Enter message to customer', ['cancel','send'], 'cancel');
+        if (msg[0] == 'cancel') return;
+        await api({
+            email: 'order',
+            id: p.getAttribute('data'),
+            message: msg[1],
+            session_id: getCookie('session')
+        });
+    },
+    'edit_order': async (dom) => {
+        const p = dom.parentNode.parentNode;
+        p.classList.add('edit');
+        p.classList.remove('order');
+        Array.from(p.querySelectorAll(':scope>div:first-child>p,:scope>div:first-child tr:not(.edit) td')).forEach((x:HTMLElement) => {
+            x.setAttribute('contenteditable', 'true');
+        })
+    },
+    'save_order': async (dom) => { // TODO MODIFY NOT ONLY DELETE
+        const p = dom.parentNode.parentNode;
+        const As:any[] = Array.from(p.children[0].querySelectorAll('tbody:not(:first-child):not(:last-child)'));
+        const id = p.querySelector(':scope>div:nth-child(2)').getAttribute('data');
+        const ids = [];
+        for (const A of As) {
+            const res = A.querySelector('tr[data]') ? await api<any>({
+                id: A.querySelector('tr[data]').getAttribute('data'),
+                update: 'item',
+                session_id: getCookie('session'),
+                belonged_customer_id: id,
+                name: A.querySelector('td:nth-child(1)').innerText,
+                brand: A.querySelector('td:nth-child(2)').innerText,
+                model: A.querySelector('td:nth-child(3)').innerText,
+                serial: A.querySelector('td:nth-child(4)').innerText,
+            }) : await api<{id:string}>({
+                new: 'item',
+                session_id: getCookie('session'),
+                belonged_customer_id: id,
+                name: A.querySelector('td:nth-child(1)').innerText,
+                brand: A.querySelector('td:nth-child(2)').innerText,
+                model: A.querySelector('td:nth-child(3)').innerText,
+                serial: A.querySelector('td:nth-child(4)').innerText,
+            });
+            if (!A.querySelector('tr[data]')) ids.push(res.data.id);
+        }
+        const res = p.hasAttribute('data') ? await api<any>({
+            update: 'order',
+            id: p.getAttribute('data'),
+            session_id: getCookie('session'),
+            description: p.querySelector(':scope>div:first-child p').innerText
+        }) : await api<any>({
+            new: 'order',
+            rms_code: p.children[3].querySelector('h1').innerText,
+            description: p.children[0].querySelector('p').innerHTML,
+            item_ids: ids,
+            session_id: getCookie('session'),
+            customer_id: id
+        });
+        // Set up uneditable order
+        const customer_name = document.createElement('h1');
+        customer_name.innerText = p.querySelector(`select option[value="${id}"]`).innerText;
+        p.children[0].querySelector('h1').innerText = res.data.id;
+        p.children[1].insertBefore(customer_name, p.querySelector('select'));
+        p.children[1].removeChild(p.querySelector('select'));
+        p.classList.remove('edit');
+        p.setAttribute('data', res.data.id);
+        Array.from(p.querySelectorAll('[contenteditable]')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
+        //location.reload();
+    },
+    'load_order_customer': async (dom) => {
+        const s = dom.tagName == 'SELECT' ? dom : dom.querySelector('select');
+        const p = s.parentElement;
+        let customer = null;
+        if (!s.children.length) {
+            const customers = await api<{
+                id:string,
+                name:string,
+                description:string,
+                contact_number:string,
+                email:string
+            }[]>({
+                query: 'customers',
+                mode: 'all',
+                session_id: getCookie('session')
+            });
+            for (const cus of customers.data) {
+                s.innerHTML += html`<option value="${cus.id}">${cus.name}</option>`
+            }
+            customer = customers.data[0];
+        }
+        if (customer == null) {
+            const uid:string = s.value;
+            customer = (await api<any>({
+                fetch: 'customers',
+                ids: [uid],
+                session_id: getCookie('session')
+            })).data[0];
+        }
+        p.querySelector('h1').innerText = customer.name;
+        p.querySelector('p').innerText = customer.description;
+        p.querySelector('a.cn').innerText = customer.contact_number;
+        p.querySelector('a.em').innerText = customer.email;
+        p.setAttribute('data', customer.id);
+        console.log(customer);
+    },
+    'load_order_states': async (body, id) => {
+        const state_map = [[1],[2,4,5],[],[6],[6],[],[],[1,2,3,4,5,6]];
+        Array.from(body.children).map((x:HTMLElement)=>x.parentNode.removeChild(x));
+        const states = await api<any>({
+            query: 'states',
+            session_id: getCookie('session'),
+            order_ids: [id]
+        });
+        for (const state of states.data) {
+            const dom = document.createElement('div');
+            dom.innerHTML = /*html*/`
+                <div class="state" data="${state.state_code}"></div>
+                <span class="date">${dateFormat(state.create_at)}</span>
+                ${state.employee_id ? html`<a href="/employee?id=${state.employee_id}" class="employee">Employee</a>` : ''}
+                ${state.reason ? html`<p>${state.reason}</p>` : ''}
+            `;
+            body.appendChild(dom);
+        }
+        const state = states.data[states.data.length-1]?.state_code ?? 0;
+        const dom = document.createElement('div');
+        dom.innerHTML = /*html*/`
+            ${state_map[state].map(n => /*html*/`
+                <div>
+                    <div class="state" data="${n}" onclick="action['state_add'](this,${n})"></div>
+                </div>
+            `).join('')}
+        `;
+        body.appendChild(dom);
+        body.style.maxHeight = `${body.scrollHeight}px`;
+    },
+    'manage_order': async (dom) => {
+        const p = dom.parentElement.parentElement as HTMLElement;
+        const body = p.querySelector<HTMLElement>(':scope>div:nth-child(3)');
+        p.classList.toggle('order');
+        if (!p.classList.contains('order')) {
+            body.style.maxHeight = '0';
+            return;
+        }
+        action['load_order_states'](body, p.getAttribute('data'));
+    },
+    /* ----- STATES ----- */
+    'state_add': async (dom,n) => {
+        const p = dom.parentElement.parentElement.parentElement.parentElement;
+        //const cstate = Number(p.querySelector(':scope>div:nth-child(4)>div.state[data]').getAttribute('data'));
+        //if (Number.isNaN(cstate)) throw pop('error', 'System failure', 'Failed to get current state');
+        let args = {};
+        if (n == 1) {
+            const prompt = await pop('', 'Processing report', 'Enter reason of processing', ['cancel','add'], 'cancel');
+            if (prompt[0] == 'cancel') return;
+            args = {...args, employee_id, reason: prompt[1]};
+        } else if (n == 4) {
+            const prompt = await pop('', 'Incomplete report', 'Enter reason of incompletion', ['cancel','add'], 'cancel');
+            if (prompt[0] == 'cancel') return;
+            args = {...args, reason: prompt[1]};
+        } else if (n == 5) {
+            const prompt = await pop('', 'Cancel report', 'Enter reason of cancellation', ['cancel','add'], 'cancel');
+            if (prompt[0] == 'cancel') return;
+            args = {...args, reason: prompt[1]};
+        } else if (n == 7) {
+            const prompt = await pop('', 'Payment report', 'Enter amount of payment', ['cancel','add'], 'cancel');
+            if (prompt[0] == 'cancel') return;
+            args = {...args, reason: prompt[1]};
+        }
+        await api({
+            new: 'state',
+            session_id: getCookie('session'),
+            order_id: p.getAttribute('data'),
+            state_code: n,
+            ...args
+        });
+        action['load_order_states'](p.querySelector(':scope>div:nth-child(3)'), p.getAttribute('data'));
     }
 };
-
-/** New Action */
-q('#new', x => x.onclick = async () => {
-    console.log(path);
-    if (path[0] == 'customers') {
-        row_customer(null,true);
-    } else if (path[0] == 'employee') {
-        row_employee();
-    } else if (path[0] == 'orders') {
-        q('#body')[0].appendChild(await card());
-    }
-});
 
 /** Find */
 q('#find_text')[0].onkeyup = q('#search')[0].click = () => load(true);
@@ -726,8 +908,14 @@ q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
 }));
 
 /** Onloaded */
+let employee_id = '';
 onload = async function() {
-    const loggedin = getCookie('session') != null ? (await api({get:'current', session_id:getCookie('session')}, ()=>true)).errno == 0 : false;
+    let loggedin = false;
+    if (getCookie('session') != null) {
+        const res = await api<{id?:string}>({get:'current', session_id:getCookie('session')}, ()=>true);
+        if (res.errno == 0) loggedin = true;
+        employee_id = res.data?.id ?? '';
+    }
     if (loggedin) {
         await load();
         q('.t20p_title', x=>x.beginElement());

@@ -2,7 +2,8 @@
 @use 'sass:color'
 $u: 75px
 $p: #e7504b
-$t: .25s
+$t: 0.25s
+$h: 1.1*$u
 
 /* ----- FONTS ----- */
 @font-face
@@ -27,11 +28,12 @@ icon
 html
     height: 100%
 body
-    margin: 3.7*$u 0 0 3*$u
+    margin: 1.1*$u+$h 0 0 3*$u
     height: calc(100% - 3.7*$u)
     font-family: LeagueSpartan
     color: #fff
     background-color: #111
+    overflow: hidden scroll
 
     &>div
         transition: opacity $t $t
@@ -164,6 +166,32 @@ body::before, #head::after
     &>table
         margin: 0.2*$u
         width: calc(100% - 0.4*$u)
+        tr.empty
+            display: none
+            td
+                text-align: center
+        tr.edit
+            .noedit
+                display: none
+        tr:not(.empty)
+            .edit
+                display: none
+    [contenteditable]:focus
+        position: relative
+        outline: 0.04*$u solid #e00
+        z-index: 1
+    &>button
+        margin: 0 0.2*$u
+        background: #333
+        color: #fff
+        font-size: 0.25*$u
+        font-weight: bold
+        padding: 0.1*$u
+        &:before
+            content: '+'
+        &:active
+            background-color: #222
+            color: #ccc
 
 /* ----- FIND ----- */
 #find
@@ -173,12 +201,12 @@ body::before, #head::after
     width: calc(100% - 3*$u)
     display: grid
     grid-template-columns: 1fr 1fr 1fr 1fr 0.5*$u
-    grid-template-rows: 0.6*$u 1.5*$u
+    grid-template-rows: 0.6*$u
     padding: 0.25*$u
     padding-bottom: 0.25*$u
     background-color: #eee
     box-shadow: 0 0.1*$u 0.1*$u -0.1*$u #aaa
-    border-radius: 0.2*$u 0 0.2*$u 0.2*$u
+    border-radius: 0.2*$u 0 0.2*$u 0.2*$u //0.2*$u 0 0.2*$u 0.2*$u
     margin-bottom: 0.1*$u
     color: #555
     z-index: 3
@@ -190,7 +218,7 @@ body::before, #head::after
         padding: 0.125*$u
         font-size: 0.25*$u
     &>div
-        display: flex
+        display: none // flex
         flex-direction: column
         border: 0.01*$u solid #aaa
         //margin: 0 0.1*$u
@@ -233,6 +261,7 @@ body::before, #head::after
         background: #333
         border-radius: 0 0 0.1*$u 0
         color: #fff
+        display: none
         &::after
             content: '+'
             font-family: FontAwesome
@@ -270,10 +299,6 @@ table
     td>div
         height: 100%
         display: flex
-    tr.empty
-        display: none
-        td
-            text-align: center
     tbody:nth-child(2) tr.empty
         display: table-row
     button
@@ -298,10 +323,10 @@ table
 /* ----- LOADER ----- */
 #loader
     position: fixed
-    top: 3.1*$u
+    top: $u+$h
     right: 0
     width: calc(100% - 3*$u)
-    height: calc(100% - 3.1*$u)
+    height: calc(100% - $u - $h)
     background-color: #ddd
     box-shadow: inset 0 0 0.25*$u #0005
     opacity: 0
@@ -333,8 +358,8 @@ table
         border-radius: 0.25*$u 0 0 0
         box-shadow: inset 0 0 0.25*$u #0005
         transition: opacity $t $t
-        mask-image: linear-gradient(to bottom, black 2.1*$u, transparent 3*$u, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
-        -webkit-mask-image: linear-gradient(to bottom, black 2.1*$u, transparent 3*$u, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
+        mask-image: linear-gradient(to bottom, black $h, transparent 0.35*$u+$h, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
+        -webkit-mask-image: linear-gradient(to bottom, black $h, transparent 0.35*$u+$h, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
         pointer-events: none
 
     button
@@ -392,13 +417,21 @@ table
     position: relative
     display: grid
     grid-template-columns: auto 5*$u
-    grid-template-rows: auto 0 0.5*$u
+    grid-template-rows: auto auto 0.5*$u
     margin: 0.25*$u
-    height: 4*$u
+    width: calc(100% - 0.5*$u)
     border: 0.01*$u solid #555
     border-radius: 0.1*$u
     overflow: hidden
     background-color: #aaa
+    outline: 0 solid #e00
+    transition: margin $t, outline $t
+    &[stage="1"]
+        margin-left: 100%
+    &[stage="2"]
+        height: 0
+        margin: 0
+        margin-left: 100%
     /* ORDER */
     &>div:nth-child(1)
         display: grid
@@ -432,6 +465,10 @@ table
             grid-area: 3 / 1 / span 1 / span 2
             text-align: center
             padding: 0.1*$u
+            margin: 0.1*$u
+            &[contenteditable]:empty::before
+                content: 'Enter Description Here'
+                opacity: 0.5
     /* CUSTOMER */
     &>div:nth-child(2)
         display: grid
@@ -475,21 +512,71 @@ table
                     content: '\f0e0'
     /** STATUS */
     &>div:nth-child(3)
+        display: flex
+        flex-direction: column
+        max-height: 0
         grid-area: 2 / 1 / span 1 / span 2
         background-color: #555
+        overflow: hidden
+        transition: max-height $t
+        &>div
+            position: relative
+            display: grid
+            grid-template-columns: 1.5*$u auto auto
+            grid-template-rows: 0.5*$u auto
+            &::before
+                content: ''
+                position: absolute
+                left: 0.24*$u
+                top: 0
+                height: 100%
+                border-left: 0.02*$u solid #333
+                z-index: 0
+            .date
+                grid-area: 1 / 2
+                padding: 0.15*$u
+                color: #aaa
+            .employee
+                grid-area: 1 / 3
+                text-align: right
+                padding: 0.15*$u
+                color: #aaa
+            p
+                grid-area: 2 / 2 / span 1 / span 2
+                margin: 0
+                padding: 0.15*$u
+                color: #fff
+            &:last-child
+                display: flex
+                flex-direction: column
+                padding-left: 0.25*$u
+                &>div
+                    opacity: 0.5
+                    transition: opacity $t
+                    &:hover
+                        opacity: 1
+                &::before
+                    border-left-style: dashed
     /* INFO */
     &>div:nth-child(4)
+        position: relative
         display: flex
         grid-area: 3 / 1 / span 1 / span 2
         background-color: #555
         z-index: 0
+        &::before
+            content: ''
+            position: absolute
+            left: 0.24*$u
+            top: 0
+            height: 0.14*$u
+            border-left: 0.02*$u solid #333
+            mask-image: linear-gradient(to bottom, black 0, transparent 100%)
+            -webkit-mask-image: linear-gradient(to bottom, black 0, transparent 100%)
+            opacity: 0
+            transition: opacity $t
         div
-            width: 0.2*$u
             grid-area: 1 / 1
-            background-color: #a11
-            margin: 0.15*$u
-            border: 0.01*$u solid #333
-            border-radius: 50%
         p, h1
             margin: 0
             padding: 0 0.2*$u
@@ -511,14 +598,72 @@ table
             border-right: 0.01*$u solid #333
             &:active
                 background-color: #333
+    /* STATE COLOR */
+    .state
+        position: relative
+        cursor: pointer
+        width: 0.2*$u
+        height: 0.2*$u
+        border-radius: 50%
+        border: 0.01*$u solid #333
+        margin: 0.15*$u
+        z-index: 1
+        &::before
+            padding-left: 0.25*$u
+            color: #fff
+        &::after
+            content: ''
+            position: absolute
+            left: -0.15*$u
+            top: -0.15*$u
+            width: 1.5*$u
+            height: 0.5*$u
+        &:not([data])
+            background-color: #555
+        &[data="0"]
+            background-color: #00a
+            &::before
+                content: 'waiting'
+        &[data="1"]
+            background-color: #cc0
+            &::before
+                content: 'processing'
+        &[data="2"]
+            background-color: #0cc
+            &::before
+                content: 'done'
+        &[data="3"]
+            background-color: #0c0
+            &::before
+                content: 'finished'
+        &[data="4"]
+            background-color: #c80
+            &::before
+                content: 'incomplete'
+        &[data="5"]
+            background-color: #c00
+            &::before
+                content: 'canceled'
+        &[data="6"]
+            background-color: #c0c
+            &::before
+                content: 'refunded'
+        &[data="7"]
+            background-color: #ac0
+            &::before
+                content: 'paid'
     &:not(.edit)
         .edit
             display: none
     &.edit
+        outline-width: 0.04*$u
         .noedit
             display: none
-    &.order
-        grid-template-rows: auto auto 0.5*$u
+    &[data].order
+        &>div:nth-child(4)::before
+            opacity: 1
+                
+
 
 /* ----- LOGIN/SIGNUP ----- */
 #login
@@ -697,15 +842,15 @@ table
                 &::before
                     border-color: #a33
             &.warning
-                border-color: #aa3
+                border-color: #a63
                 h1
-                    background-color: #aa3
+                    background-color: #a63
                 button
-                    background-color: #aa3
-                    border-left-color: #cc5
-                    border-right-color: #881
+                    background-color: #a63
+                    border-left-color: #c85
+                    border-right-color: #841
                 &::before
-                    border-color: #aa3
+                    border-color: #a63
 /* ----- BEFORE LOADED ----- */
 body.load
     overflow: hidden
