@@ -544,6 +544,8 @@ table
         pointer-events: none
         overflow: auto
         padding: 0.2*$u 0
+        mask-image: linear-gradient(to bottom, transparent 0, black 0.2*$u, black calc(100% - 0.2*$u), transparent 100%)
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 0.2*$u, black calc(100% - 0.2*$u), transparent 100%)
         &.on
             opacity: 1
         div
