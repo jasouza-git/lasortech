@@ -17,7 +17,7 @@ date_default_timezone_set('UTC');
 
 $out = (object) [ "errno" => 0 ];
 
-// $result = handleException(function () {
+$result = handleException(function () {
     global $out;
     if (isset($_POST["action"])) {
         $action = $_POST["action"];
@@ -162,11 +162,11 @@ $out = (object) [ "errno" => 0 ];
         "Bad Request", 
         "page not found."
     );
-// }, "internal exception caused.");
+}, "internal exception caused.");
 
-// if ($result['error']) {
-//     required(false, 55, "Internal Failed", $result['trace']);
-// }
+if ($result['error']) {
+    required(false, 55, "Internal Failed", $result['trace']);
+}
 
 header("Content-Type: application/json");
 echo json_encode($out);
