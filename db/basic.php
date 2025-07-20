@@ -310,7 +310,7 @@ function build_tail_sql(
     $sql = $order_sql;
 
     $page = $page_data['page'] ?? null;
-    $count = $page_data['count'] ?? null;
+    $count = $page_data['count_per_page'] ?? null;
 
     if ($page !== null && $count !== null) {
         $offset = $count * $page;
@@ -320,11 +320,35 @@ function build_tail_sql(
     return $sql;
 }
 
+function make_combined_using_ids(array|null $ids, callable $sql_builder) {
+    $ids ??= [];
+
+    $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+
+    $result = $sql_builder($placeholders);
+    $placeholder_call_times = $result['placeholder_count'];
+    $sql = $result['sql'];
+
+    $types = str_repeat('s', $placeholder_call_times * count($ids));
+    $values = [];
+
+    for ($i = 0; $i < $placeholder_call_times; $i++) {
+        $values = array_merge($values, $ids);
+    }
+
+    return [
+        "sql" => $sql,
+        "values" => $values,
+        "types" => $types
+    ];
+}
+
 function str_to_html(string $str) {
+    $indents = str_repeat("&nbsp;", 4);
     $str = htmlspecialchars($str);
-    $str = str_replace("\t", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
-    $str = str_replace("\r", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    $str = str_replace("\t", $indents, $str);
+    $str = str_replace("\r", $indents, $str);
     $str = str_replace("\n", '<br/>', $str);
-    $str = str_replace("    ", '&nbsp;&nbsp;&nbsp;&nbsp;', $str);
+    $str = str_replace("    ", $indents, $str);
     return $str;
 }

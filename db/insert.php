@@ -5,6 +5,7 @@ class DB_INSERT extends DB {
 
     /**
      * @param array $data:
+     *      - email: string
      *      - password_hashed: string
      * 
      * @return array:
@@ -100,14 +101,14 @@ class DB_INSERT extends DB {
      *      - brand?: string
      *      - model?: string
      *      - name?: string
-     *      - serial: string
+     *      - serial?: string
      * @return array:
      *      - id: string
      *      - belonged_customer_id: string
      *      - brand?: string
      *      - model?: string
      *      - name?: string
-     *      - serial: string
+     *      - serial?: string
      */
     public function item(array $data) {
         $item = parameter([
@@ -115,7 +116,7 @@ class DB_INSERT extends DB {
             "brand?" => "string",
             "model?" => "string",
             "name?" => "string",
-            "serial" => "string"
+            "serial?" => "string"
         ], $data);
         $combined = build_insert_sql($item, "items");
         return $this->insert($combined);
@@ -131,7 +132,7 @@ class DB_INSERT extends DB {
      *      - order_id: string
      *      - state_code: string
      *      - update_at: timestamp
-     *      - state_data: array (other parameters depends on state type)
+     *      - ...state_data: array (other parameters depends on state type)
      */
     public function state(array $data) {
         $state = parameter([
@@ -157,7 +158,7 @@ class DB_INSERT extends DB {
         $this->conn->commit();
 
         if ($state_spc) {
-            $res['state_data'] = $state_spc;
+            $res = array_merge($res, $state_spc);
         }
 
         return $res;

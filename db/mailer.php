@@ -35,6 +35,16 @@ class Mailer {
         $this->delete = new DB_DELETE($conn);
     }
 
+    /**
+     * send the verification code for email authorization
+     * @param array $data
+     *      - email: the email you want send the code
+     *      - check_exist: 
+     *          if true: will check the email in database first, and the email must be exist
+     *          if false: will check the email in database first, and the email must be not exist
+     *          if null: will not check the database
+     * @return bool true on success. On failure, the function calls die() and report error.
+     */
     public function send_verification_code(array $data) {
         $paras = parameter([
             "email" => "string",
@@ -84,6 +94,13 @@ class Mailer {
         );
     }
 
+    /**
+     * send the order details to its customer
+     * @param array $data
+     *      - id: the order's id you want send
+     *      - message?: the addtion message you want send to the customer
+     * @return bool true on success. On failure, the function calls die() and report error.
+     */
     public function send_order(array $data) {
 
         $error_title = "Order Email Send Failed";
@@ -96,11 +113,11 @@ class Mailer {
         $order_id = $paras['id'];
         $message = $paras['message'] ?? null;
 
-        $orders = $this->query->get_orders_detail([
+        $orders = $this->query->fetch_orders([
             "ids" => [$order_id]
         ]);
 
-        required(count($orders) == 1, 100, $error_title, "order id not valid.");
+        required(count($orders) == 1, 60, $error_title, "order id not valid.");
 
         $order = $orders[0];
 
@@ -159,7 +176,40 @@ class Mailer {
         );
     }
 
-    public function send(string $to, string $to_name, string $subject, $body) {
+    /**
+     * send any email to any given email address
+     * @param array $data
+     *      - email: the destination email
+     *      - to_name: the destination name, will shown in there email client
+     *      - subject: email subject
+     *      - body: the html content body
+     * @return bool true on success. On failure, the function calls die() and report error.
+     */
+    public function send_email(array $data) {
+        $paras = parameter([
+            "email" => "string",
+            "to_name" => "string",
+            "subject" => "string",
+            "body" => "string"
+        ], $data);
+
+        return $this->send(
+            $paras['email'],
+            $paras['to_name'],
+            $paras['subject'],
+            $paras['body']
+        );
+    }
+
+    /**
+     * send any email to any given email address
+     * @param array $to: the destination email
+     * @param array $to_name: the destination name, will shown in there email client
+     * @param array $subject: email subject
+     * @param array $body: the html content body
+     * @return bool true on success. On failure, the function calls die() and report error.
+     */
+    private function send(string $to, string $to_name, string $subject, string $body) {
 
         $internal_error_title = "Email Send Failed";
         $error_title = "Email Send Failed";
