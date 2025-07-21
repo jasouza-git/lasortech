@@ -132,33 +132,11 @@ async function card(data:any|null=null, edit?:boolean) {
         <div ${data?`data="${data.customer.id}"` : ''}>
             <select class="edit" onchange="action['load_order_customer'](this)"></select>
             <h1 class="noedit">${data?html`${data.customer.name}`:''}</h1>
-            <p>${data?html`${data.customer.description}`:''}</p>
+            <p>${data?html`${data.customer.description??''}`:''}</p>
             <a class="cn">${data?html`${data.customer.contact_number}`:''}</a>
             <a class="em">${data?html`${data.customer.email}`:''}</a>
         </div>
         <div>
-            <!--<div>
-                <div class="state" data="0"></div>
-                <span class="date">July 21, 2025 01:17 PM</span>
-                <span class="employee">Mavrick</span>
-            </div>
-            <div>
-                <div class="state" data="1"></div>
-                <span class="date">July 21, 2025 01:37 PM</span>
-                <span class="employee">Jason C. D'Souza</span>
-                <p>PC Build Wanted</p>
-            </div>
-            <div>
-                <div>
-                    <div class="state" data="2"></div>
-                </div>
-                <div>
-                    <div class="state" data="4"></div>
-                </div>
-                <div>
-                    <div class="state" data="5"></div>
-                </div>
-            </div>-->
         </div>
         <div>
             <div class="state" data="${data?data.state_code:''}" onclick="action['manage_order'](this)"></div>
@@ -252,7 +230,7 @@ function row_customer(data:{
     }
     if (data != null || edit) {
         const row = document.createElement('tbody');
-        row.innerHTML = /*html*/`<tr ${data?.id ? `data="${data.id}"` : ''}>
+        row.innerHTML = /*html*/`<tr ${data?.id ? `data="${data.id}"` : ''} ${edit ? 'class="edit"' : ''}>
             <td ${ek}>${data?.name??''}</td>
             <td ${ek}>${data?.contact_number??''}</td>
             <td ${ek}>${data?.email??''}</td>
@@ -696,9 +674,10 @@ const action = {
         p.classList.remove('order');
         Array.from(p.querySelectorAll(':scope>div:first-child>p,:scope>div:first-child tr:not(.edit) td')).forEach((x:HTMLElement) => {
             x.setAttribute('contenteditable', 'true');
-        })
+        });
+        await action['load_order_customer'](p.querySelector('select'));
     },
-    'save_order': async (dom) => { // TODO MODIFY NOT ONLY DELETE
+    'save_order': async (dom) => {
         const p = dom.parentNode.parentNode;
         const As:any[] = Array.from(p.children[0].querySelectorAll('tbody:not(:first-child):not(:last-child)'));
         const id = p.querySelector(':scope>div:nth-child(2)').getAttribute('data');
@@ -746,6 +725,8 @@ const action = {
         p.classList.remove('edit');
         p.setAttribute('data', res.data.id);
         Array.from(p.querySelectorAll('[contenteditable]')).map((x:HTMLElement)=>x.removeAttribute('contenteditable'));
+        console.log('DATA', res.data);
+        p.querySelector(':scope>div:nth-child(4)>div.state').setAttribute('state', res.data.state_code);
         //location.reload();
     },
     'load_order_customer': async (dom) => {
@@ -777,15 +758,15 @@ const action = {
                 session_id: getCookie('session')
             })).data[0];
         }
-        p.querySelector('h1').innerText = customer.name;
-        p.querySelector('p').innerText = customer.description;
-        p.querySelector('a.cn').innerText = customer.contact_number;
-        p.querySelector('a.em').innerText = customer.email;
+        p.querySelector('h1').innerText = customer.name??'';
+        p.querySelector('p').innerText = customer.description??'';
+        p.querySelector('a.cn').innerText = customer.contact_number??'';
+        p.querySelector('a.em').innerText = customer.email??'';
         p.setAttribute('data', customer.id);
         console.log(customer);
     },
     'load_order_states': async (body, id) => {
-        const state_map = [[1],[2,4,5],[],[6],[6],[],[],[1,2,3,4,5,6]];
+        const state_map = [[1],[2,4,5,7],[1,3,7],[],[6],[6],[],[1,2,3,4,5,6]];
         Array.from(body.children).map((x:HTMLElement)=>x.parentNode.removeChild(x));
         const states = await api<any>({
             query: 'states',
@@ -798,7 +779,11 @@ const action = {
                 <div class="state" data="${state.state_code}"></div>
                 <span class="date">${dateFormat(state.create_at)}</span>
                 ${state.employee_id ? html`<a href="/employee?id=${state.employee_id}" class="employee">Employee</a>` : ''}
-                ${state.reason ? html`<p>${state.reason}</p>` : ''}
+                ${state.reason || typeof state.amount == 'number' ? html`<p>${state.reason??`Customer paid ${state.amount.toLocaleString('en-PH', {
+                    style: 'currency',
+                    currency: 'PHP',
+                    minimumFractionDigits: 2
+                })}`}</p>` : ''}
             `;
             body.appendChild(dom);
         }
@@ -813,6 +798,7 @@ const action = {
         `;
         body.appendChild(dom);
         body.style.maxHeight = `${body.scrollHeight}px`;
+        body.parentElement.querySelector(':scope>div:nth-child(4)>div.state').setAttribute('data', state);
     },
     'manage_order': async (dom) => {
         const p = dom.parentElement.parentElement as HTMLElement;
@@ -845,7 +831,7 @@ const action = {
         } else if (n == 7) {
             const prompt = await pop('', 'Payment report', 'Enter amount of payment', ['cancel','add'], 'cancel');
             if (prompt[0] == 'cancel') return;
-            args = {...args, reason: prompt[1]};
+            args = {...args, amount: prompt[1]};
         }
         await api({
             new: 'state',

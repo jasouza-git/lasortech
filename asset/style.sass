@@ -163,6 +163,7 @@ body::before, #head::after
     color: #000
     transition: opacity $t 2*$t
     padding-bottom: $u
+    min-height: 100%
     &>table
         margin: 0.2*$u
         width: calc(100% - 0.4*$u)
@@ -173,7 +174,7 @@ body::before, #head::after
         tr.edit
             .noedit
                 display: none
-        tr:not(.empty)
+        tr:not(.edit)
             .edit
                 display: none
     [contenteditable]:focus
@@ -181,6 +182,8 @@ body::before, #head::after
         outline: 0.04*$u solid #e00
         z-index: 1
     &>button
+        position: sticky
+        top: 100%
         margin: 0 0.2*$u
         background: #333
         color: #fff

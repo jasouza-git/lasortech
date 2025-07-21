@@ -90,6 +90,7 @@ function generateKey() {
 /* ----- COMPONENT GENERATOR ----- */
 /** Order Card */
 async function card(data = null, edit) {
+    var _a;
     const out = document.createElement('div');
     if (edit == undefined)
         edit = data == null;
@@ -132,33 +133,11 @@ async function card(data = null, edit) {
         <div ${data ? `data="${data.customer.id}"` : ''}>
             <select class="edit" onchange="action['load_order_customer'](this)"></select>
             <h1 class="noedit">${data ? html `${data.customer.name}` : ''}</h1>
-            <p>${data ? html `${data.customer.description}` : ''}</p>
+            <p>${data ? html `${(_a = data.customer.description) !== null && _a !== void 0 ? _a : ''}` : ''}</p>
             <a class="cn">${data ? html `${data.customer.contact_number}` : ''}</a>
             <a class="em">${data ? html `${data.customer.email}` : ''}</a>
         </div>
         <div>
-            <!--<div>
-                <div class="state" data="0"></div>
-                <span class="date">July 21, 2025 01:17 PM</span>
-                <span class="employee">Mavrick</span>
-            </div>
-            <div>
-                <div class="state" data="1"></div>
-                <span class="date">July 21, 2025 01:37 PM</span>
-                <span class="employee">Jason C. D'Souza</span>
-                <p>PC Build Wanted</p>
-            </div>
-            <div>
-                <div>
-                    <div class="state" data="2"></div>
-                </div>
-                <div>
-                    <div class="state" data="4"></div>
-                </div>
-                <div>
-                    <div class="state" data="5"></div>
-                </div>
-            </div>-->
         </div>
         <div>
             <div class="state" data="${data ? data.state_code : ''}" onclick="action['manage_order'](this)"></div>
@@ -245,7 +224,7 @@ function row_customer(data = null, edit) {
     }
     if (data != null || edit) {
         const row = document.createElement('tbody');
-        row.innerHTML = /*html*/ `<tr ${(data === null || data === void 0 ? void 0 : data.id) ? `data="${data.id}"` : ''}>
+        row.innerHTML = /*html*/ `<tr ${(data === null || data === void 0 ? void 0 : data.id) ? `data="${data.id}"` : ''} ${edit ? 'class="edit"' : ''}>
             <td ${ek}>${(_c = data === null || data === void 0 ? void 0 : data.name) !== null && _c !== void 0 ? _c : ''}</td>
             <td ${ek}>${(_d = data === null || data === void 0 ? void 0 : data.contact_number) !== null && _d !== void 0 ? _d : ''}</td>
             <td ${ek}>${(_e = data === null || data === void 0 ? void 0 : data.email) !== null && _e !== void 0 ? _e : ''}</td>
@@ -675,6 +654,7 @@ const action = {
         Array.from(p.querySelectorAll(':scope>div:first-child>p,:scope>div:first-child tr:not(.edit) td')).forEach((x) => {
             x.setAttribute('contenteditable', 'true');
         });
+        await action['load_order_customer'](p.querySelector('select'));
     },
     'save_order': async (dom) => {
         const p = dom.parentNode.parentNode;
@@ -725,9 +705,12 @@ const action = {
         p.classList.remove('edit');
         p.setAttribute('data', res.data.id);
         Array.from(p.querySelectorAll('[contenteditable]')).map((x) => x.removeAttribute('contenteditable'));
+        console.log('DATA', res.data);
+        p.querySelector(':scope>div:nth-child(4)>div.state').setAttribute('state', res.data.state_code);
         //location.reload();
     },
     'load_order_customer': async (dom) => {
+        var _a, _b, _c, _d;
         const s = dom.tagName == 'SELECT' ? dom : dom.querySelector('select');
         const p = s.parentElement;
         let customer = null;
@@ -750,16 +733,16 @@ const action = {
                 session_id: getCookie('session')
             })).data[0];
         }
-        p.querySelector('h1').innerText = customer.name;
-        p.querySelector('p').innerText = customer.description;
-        p.querySelector('a.cn').innerText = customer.contact_number;
-        p.querySelector('a.em').innerText = customer.email;
+        p.querySelector('h1').innerText = (_a = customer.name) !== null && _a !== void 0 ? _a : '';
+        p.querySelector('p').innerText = (_b = customer.description) !== null && _b !== void 0 ? _b : '';
+        p.querySelector('a.cn').innerText = (_c = customer.contact_number) !== null && _c !== void 0 ? _c : '';
+        p.querySelector('a.em').innerText = (_d = customer.email) !== null && _d !== void 0 ? _d : '';
         p.setAttribute('data', customer.id);
         console.log(customer);
     },
     'load_order_states': async (body, id) => {
-        var _a, _b;
-        const state_map = [[1], [2, 4, 5], [], [6], [6], [], [], [1, 2, 3, 4, 5, 6]];
+        var _a, _b, _c;
+        const state_map = [[1], [2, 4, 5, 7], [1, 3, 7], [], [6], [6], [], [1, 2, 3, 4, 5, 6]];
         Array.from(body.children).map((x) => x.parentNode.removeChild(x));
         const states = await api({
             query: 'states',
@@ -772,11 +755,15 @@ const action = {
                 <div class="state" data="${state.state_code}"></div>
                 <span class="date">${dateFormat(state.create_at)}</span>
                 ${state.employee_id ? html `<a href="/employee?id=${state.employee_id}" class="employee">Employee</a>` : ''}
-                ${state.reason ? html `<p>${state.reason}</p>` : ''}
+                ${state.reason || typeof state.amount == 'number' ? html `<p>${(_a = state.reason) !== null && _a !== void 0 ? _a : `Customer paid ${state.amount.toLocaleString('en-PH', {
+                style: 'currency',
+                currency: 'PHP',
+                minimumFractionDigits: 2
+            })}`}</p>` : ''}
             `;
             body.appendChild(dom);
         }
-        const state = (_b = (_a = states.data[states.data.length - 1]) === null || _a === void 0 ? void 0 : _a.state_code) !== null && _b !== void 0 ? _b : 0;
+        const state = (_c = (_b = states.data[states.data.length - 1]) === null || _b === void 0 ? void 0 : _b.state_code) !== null && _c !== void 0 ? _c : 0;
         const dom = document.createElement('div');
         dom.innerHTML = /*html*/ `
             ${state_map[state].map(n => /*html*/ `
@@ -787,6 +774,7 @@ const action = {
         `;
         body.appendChild(dom);
         body.style.maxHeight = `${body.scrollHeight}px`;
+        body.parentElement.querySelector(':scope>div:nth-child(4)>div.state').setAttribute('data', state);
     },
     'manage_order': async (dom) => {
         const p = dom.parentElement.parentElement;
@@ -826,7 +814,7 @@ const action = {
             const prompt = await pop('', 'Payment report', 'Enter amount of payment', ['cancel', 'add'], 'cancel');
             if (prompt[0] == 'cancel')
                 return;
-            args = Object.assign(Object.assign({}, args), { reason: prompt[1] });
+            args = Object.assign(Object.assign({}, args), { amount: prompt[1] });
         }
         await api(Object.assign({ new: 'state', session_id: getCookie('session'), order_id: p.getAttribute('data'), state_code: n }, args));
         action['load_order_states'](p.querySelector(':scope>div:nth-child(3)'), p.getAttribute('data'));
