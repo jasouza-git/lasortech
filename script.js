@@ -370,6 +370,12 @@ async function load(quick = false, page = 0) {
         document.body.classList.add('loading');
     const sub = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
     path = sub;
+    // 1.1 Maybe logout?
+    if (sub[0] == 'logout') {
+        document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        location.reload();
+        return;
+    }
     // 2. Get number of datas for proper page identification
     const count = (await api(Object.assign(Object.assign({ query: sub[0], mode: sub[1], session_id: getCookie('session') }, (q('#find_text')[0].value.length ? { keywords: q('#find_text')[0].value.split(' ') } : {})), { get_count_only: true }))).data.count;
     // 3. Request to API
@@ -881,8 +887,10 @@ onload = async function () {
     let loggedin = false;
     if (getCookie('session') != null) {
         const res = await api({ get: 'current', session_id: getCookie('session') }, () => true);
-        if (res.errno == 0)
+        if (res.errno == 0) {
             loggedin = true;
+            q('#user_name', x => x.innerText = res.data.name);
+        }
         employee_id = (_b = (_a = res.data) === null || _a === void 0 ? void 0 : _a.id) !== null && _b !== void 0 ? _b : '';
     }
     if (loggedin) {

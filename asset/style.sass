@@ -121,6 +121,7 @@ body::before, #head::after
     flex-direction: column
     grid-area: 2 / 1
     padding: 0.1*$u
+    overflow: hidden auto
     z-index: 2
     p
         font-weight: bold
@@ -545,10 +546,11 @@ table
                 padding: 0.15*$u
                 color: #aaa
             p
-                grid-area: 2 / 2 / span 1 / span 2
+                grid-area: 2 / 1 / span 1 / span 3
                 margin: 0
                 padding: 0.15*$u
                 color: #fff
+                margin-left: 0.5*$u
             &:last-child
                 display: flex
                 flex-direction: column
@@ -624,35 +626,35 @@ table
         &:not([data])
             background-color: #555
         &[data="0"]
-            background-color: #00a
+            background-color: #0000FF
             &::before
                 content: 'waiting'
         &[data="1"]
-            background-color: #cc0
+            background-color: #FFFF67
             &::before
                 content: 'processing'
         &[data="2"]
-            background-color: #0cc
+            background-color: #75FCFD
             &::before
                 content: 'done'
         &[data="3"]
-            background-color: #0c0
+            background-color: #75FC4C
             &::before
                 content: 'finished'
         &[data="4"]
-            background-color: #c80
+            background-color: #F19937
             &::before
                 content: 'incomplete'
         &[data="5"]
-            background-color: #c00
+            background-color: #FF0000
             &::before
                 content: 'canceled'
         &[data="6"]
-            background-color: #c0c
+            background-color: #FF00FF
             &::before
                 content: 'refunded'
         &[data="7"]
-            background-color: #ac0
+            background-color: #8EFA00
             &::before
                 content: 'paid'
     &:not(.edit)

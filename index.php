@@ -53,6 +53,8 @@ $config = (object)[
                     }
                 }
             ?>
+            <p>User: <span id="user_name"></span></p>
+            <button data="logout">Logout</button>
         </div>
         <div id="head">
             <span id="head_info0">XX Handling</span>
@@ -75,112 +77,9 @@ $config = (object)[
             <button id="search"></button>
         </div>
         <div id="body">
-            <table>
-                <tr><th>Name</th><th>Brand</th><th>Mode</th><th>Date</th><th class="edit">Options</th></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><div><button>&#xe2b4;</button><button>&#xf304;</button><button>&#xf0c7;</button></div></td></tr>
-                <tr class="edit"><td colspan="5"><div><button>+</button></div></td></tr>
-            </table>
-            <!--
-            <div class="card">
-                <div>
-                    <h1>Order ID</h1>
-                    <h2>Update Date / Create Date</h2>
-                    <div>
-                        <table>
-                            <tr><th>Name</th><th>Brand</th><th>Mode</th><th>Date</th></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td></tr>
-                        </table>
-                    </div>
-                    <p>Description</p>
-                </div>
-                <div>
-                    <h1>Customer Name</h2>
-                    <p>Customer Description</p>
-                    <a class="fb">jkergre</a>
-                    <a class="cn">090230944545</a>
-                    <a class="em">erger@hnrh.vof</a>
-                </div>
-                <div>
-                    <div data="0"></div>
-                    <p>Status description</p>
-                    <h1>RMS CODE</h1>
-                </div>
-            </div>
-            
-            <div class="card edit">
-                <div>
-                    <h1>Order ID</h1>
-                    <h2>Update Date / Create Date</h2>
-                    <div>
-                        <table>
-                            <tr><th>Name</th><th>Brand</th><th>Mode</th><th>Date</th><th class="edit">Delete</th></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr><td>Acer Nitro 5</td><td>Acer</td><td>Laptop</td><td>July 16, 2025</td><td class="edit"><button>-</button></td></tr>
-                            <tr class="edit"><td colspan="5"><button>+</button></td></tr>
-                        </table>
-                    </div>
-                    <p>Description</p>
-                </div>
-                <div>
-                    <h1>Customer Name</h2>
-                    <p>Customer Description</p>
-                    <a class="fb">jkergre</a>
-                    <a class="cn">090230944545</a>
-                    <a class="em">erger@hnrh.vof</a>
-                </div>
-                <div>
-                    <div data="0"></div>
-                    <p>Status description</p>
-                    <h1>RMS CODE</h1>
-                </div>
-            </div>-->
         </div>
         <?php echo file_get_contents('logo2.xml') ?>
         <div id="tabs">
-            <?php
-            /*
-                echo '<button class="on">1</button>';
-                for ($n = 2; $n < 5; $n++) {
-                    echo '<button>' . $n . '</button>';
-                }
-                echo '<button class="more"></button>';
-                for ($n = 24; $n < 29; $n++) {
-                    echo '<button>' . $n . '</button>';
-                }
-                echo '<div contenteditable="true">10</div>'*/
-            ?>
         </div>
         <div id="login">
             <div id="login_forgot">

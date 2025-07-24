@@ -385,6 +385,12 @@ async function load(quick=false, page:number=0) {
     if (!quick) document.body.classList.add('loading');
     const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
     path = sub;
+    // 1.1 Maybe logout?
+    if (sub[0] == 'logout') {
+        document.cookie = "session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        location.reload();
+        return;
+    }
     // 2. Get number of datas for proper page identification
     const count = (await api<{count:number}>({
         query:sub[0],
@@ -898,8 +904,11 @@ let employee_id = '';
 onload = async function() {
     let loggedin = false;
     if (getCookie('session') != null) {
-        const res = await api<{id?:string}>({get:'current', session_id:getCookie('session')}, ()=>true);
-        if (res.errno == 0) loggedin = true;
+        const res = await api<{id?:string,name:string}>({get:'current', session_id:getCookie('session')}, ()=>true);
+        if (res.errno == 0) {
+            loggedin = true;
+            q('#user_name', x => x.innerText = res.data.name);
+        }
         employee_id = res.data?.id ?? '';
     }
     if (loggedin) {

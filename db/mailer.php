@@ -67,10 +67,6 @@ class Mailer {
 
         $code = str_pad(strval(random_int(0, 999999)), 6, '0', STR_PAD_LEFT);
 
-        $replacing = [
-            "{{code}}" => $code
-        ];
-
         $this->delete->delete([
                 "ids" => [$paras['email']],
             ], "email_validations", "email");
@@ -80,18 +76,23 @@ class Mailer {
             "code" => $code
         ]);
 
-        $mail_html = file_get_contents(__DIR__ . "/email_validation_code.html");
+        $body = <<<HTML
+            <div style="text-align: center">
+                <h1>Your Verification Code</h1>
+                <p>Please use the following code to complete your verification:</p>
+                <code>$code</code>
+                <p>If you did not request this code, you can safely ignore this email.</p>
+            </div>
+        HTML;
 
-        foreach ($replacing as $key => $value) {
-            $mail_html = str_replace($key, $value, $mail_html);
-        }
 
         return $this->send(
             $paras['email'],
             "New User",
             "Your Verification Code from Lasortech",
-            $mail_html
+            str_replace('<!-- CONTENT -->', $body, file_get_contents(__DIR__ . "/email.html"))
         );
+
     }
 
     /**
@@ -111,15 +112,16 @@ class Mailer {
         ], $data);
 
         $order_id = $paras['id'];
-        $message = $paras['message'] ?? null;
+        $message = $paras['message'] ?? "";
+        if (!strlen($message)) $message = "We're Working on Your Device - Here's the Latest";
 
+        // Get Order
         $orders = $this->query->fetch_orders([
             "ids" => [$order_id]
         ]);
-
         required(count($orders) == 1, 60, $error_title, "order id not valid.");
-
         $order = $orders[0];
+        
 
         $item_rows = "";
         foreach ($order['items'] as $i => $item) {
@@ -128,51 +130,89 @@ class Mailer {
             $brand = $item['brand'] ?? "N/A";
             $model = $item["model"] ?? "N/A";
             $serial = $item['serial'];
+            $attr = $index % 2 ? '' : ' class="dark"';
 
-            $item_rows .= <<<ROW
-            <tr>
-                <th>$index</th>
-                <th>$name</th>
-                <th>$brand</th>
-                <th>$model</th>
-                <th>$serial</th>
+            $item_rows .= <<<HTML
+            <tr$attr>
+                <td>$index</td>
+                <td>$name</td>
+                <td>$brand</td>
+                <td>$model</td>
+                <td>$serial</td>
             </tr>
-            ROW;
+            HTML;
         }
 
-        $msg = "";
-        if ($message) {
-            $msg = <<<MSG
-            <div class="section">
-                <h2>Message from Staff</h2>
-                <p>$message<p>
+        $states = $this->query->states([
+            "order_ids" => [$order_id]
+        ]);
+        $state_rows = "";
+        $n = 0;
+        $len_states = count($states);
+        foreach ($states as $state) {
+            $tag = ($n == 0 ? "first" : "") . ($n+1 == $len_states ? " last" : "");
+            $cont = isset($state['reason']) ? $state['reason'] : (isset($state['amount']) ? 'Customer paid ' . $state['amount'] : "");
+            if (strlen($cont)) $cont = '<div class="body">' . $cont . '</div>';
+            $date = (new DateTime($state['create_at']))->format('F j, Y h:i:s A');
+            $state_rows .= <<<HTML
+                <div class="$tag">
+                    <div class="num n{$state['state_code']}" style="background-color:{$state['color']}"></div>
+                    <span class="name">{$state['label']}</span>
+                    <span class="info">
+                        <span class="date">{$date}</span>
+                        <span class="employee">...</span>
+                    </span>
+                    $cont
+                </div>
+            HTML;
+            $n++;
+        }
+
+        $body =<<<HTML
+            <div>
+                <h2>Customer Information</h2>
+                <div>
+                    <p><span>Customer:</span> {$order['customer']['name']}</p>
+                    <p><span>Email:</span> {$order['customer']['email']}</p>
+                </div>
             </div>
-            MSG;
-        }
-
-        $replacing = [
-            "{{customer_name}}" => $order['customer']['name'],
-            "{{customer_email}}" => $order['customer']['email'],
-            "{{order_id}}" => $order['id'],
-            "{{order_rms}}" => $order['rms_code'],
-            "{{order_status}}" => $order['state']['label'],
-            "{{state_color}}" => $order['state']['color'],
-            "{{last_update}}" => $order['update_at'],
-            "{{items_rows}}" => $item_rows,
-            "{{message}}" => $msg
-        ];
-
-        $mail_html = file_get_contents(__DIR__ . "/email_order.html");
-
-        foreach ($replacing as $key => $value) {
-            $mail_html = str_replace($key, $value, $mail_html);
-        }
+            <div>
+                <h2>Order Details</h2>
+                <div>
+                    <p><span>Order No.:</span> {$order['id']}</p>
+                    <p><span>RMS Code:</span> {$order['rms_code']}</p>
+                    <p><span>Status:</span> <span style="color:{$order['state']['color']}">{$order['state']['label']}</span></p>
+                    <p><span>Last Update</span> {$order['update_at']}</p>
+                </div>
+            </div>
+            <div>
+                <h2>Items in Service</h2>
+                <table>
+                    <thead><tr>
+                        <th class="first">#</th>
+                        <th>Name</th>
+                        <th>Brand</th>
+                        <th>Model</th>
+                        <th class="last">Serial</th>
+                    </tr></thead>
+                    <tbody>
+                        $item_rows
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <div class="state">
+                    $state_rows
+                </div>
+            </div>
+        HTML;
 
         return $this->send(
             $order['customer']['email'],
             $order['customer']['name'],
-            "We're Working on Your Device - Here's the Latest",
-            $mail_html
+            $message,
+            str_replace('<!-- CONTENT -->', $body, file_get_contents(__DIR__ . "/email.html"))
+            //$mail_html
         );
     }
 
