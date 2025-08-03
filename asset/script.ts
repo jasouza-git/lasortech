@@ -45,9 +45,10 @@ function getCookie(name) {
   }
   return null;
 }
-function dateFormat(d: Date|null|string= new Date(), f: string = '%b %d, %Y'): string {
+function dateFormat(d: Date|null|string= new Date(), f: string = '%H:%M:%S %p - %b %d, %Y'): string {
     if (d == null) d = new Date();
     else if (typeof d == 'string') d = new Date(d);
+    d.setTime(d.getTime() + (8*60*60*1000));
     return f
         .replace(/%Y/g, `${d.getFullYear()}`)
         .replace(/%y/g, String(d.getFullYear()).slice(-2))
@@ -142,6 +143,10 @@ async function card(data:any|null=null, edit?:boolean) {
             <div class="state" data="${data?data.state_code:''}" onclick="action['manage_order'](this)"></div>
             <!--<p onclick="action['order_state'](this)">${data?data.state.label:'Not yet created'}</p>-->
             <h1>${data?data.rms_code:generateKey()}</h1>
+            <button class="noedit" onclick="action['print_order'](this)">
+                <icon>&#xf02f;</icon>
+                Print
+            </button>
             <button class="noedit" onclick="action['send_order'](this)">
                 <icon>&#xf0e0;</icon>
                 E-Mail
@@ -248,7 +253,7 @@ function row_customer(data:{
 }
 /** Item Row */
 function row_items(data:{
-    belonged_customer_id:string,
+    customer:{name:string,id:string},
     brand:string,
     create_at:string,
     id:string,
@@ -280,7 +285,7 @@ function row_items(data:{
             <td ${ek}>${data?.brand??''}</td>
             <td ${ek}>${data?.model??''}</td>
             <td ${ek}>${data?.serial??''}</td>
-            <td ${ek}>${data?.belonged_customer_id?`<a href="/user/${data?.belonged_customer_id}">User</a>`:'Unknown'}</td>
+            <td ${ek}>${data?.customer?.name? `<a href="/customer?id=${data?.customer?.id}">${data?.customer?.name}</a>`:'Unknown'}</td>
             <td><div>
                 <button>&#xe2b4;</button>
                 ${
@@ -528,6 +533,7 @@ const action = {
         if (res.data != null) {
             document.body.classList.remove('login');
             setCookie('session', res.data.id, 7);
+            employee_id = res.data.user_id;
             load();
         }
     },

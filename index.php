@@ -33,6 +33,11 @@ $config = (object)[
     ]
 ];
 ?>
+<?php /* ---- PRINTING ----- */
+if (explode('/', $_SERVER['REQUEST_URI'])[1] == 'print') die(<<<HTML
+    <button>Hi</button>
+HTML);
+?>
 <!DOCTYPE html>
 <html>
     <head>

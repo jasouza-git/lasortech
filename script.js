@@ -44,11 +44,12 @@ function getCookie(name) {
     }
     return null;
 }
-function dateFormat(d = new Date(), f = '%b %d, %Y') {
+function dateFormat(d = new Date(), f = '%H:%M:%S %p - %b %d, %Y') {
     if (d == null)
         d = new Date();
     else if (typeof d == 'string')
         d = new Date(d);
+    d.setTime(d.getTime() + (8 * 60 * 60 * 1000));
     return f
         .replace(/%Y/g, `${d.getFullYear()}`)
         .replace(/%y/g, String(d.getFullYear()).slice(-2))
@@ -143,6 +144,10 @@ async function card(data = null, edit) {
             <div class="state" data="${data ? data.state_code : ''}" onclick="action['manage_order'](this)"></div>
             <!--<p onclick="action['order_state'](this)">${data ? data.state.label : 'Not yet created'}</p>-->
             <h1>${data ? data.rms_code : generateKey()}</h1>
+            <button class="noedit" onclick="action['print_order'](this)">
+                <icon>&#xf02f;</icon>
+                Print
+            </button>
             <button class="noedit" onclick="action['send_order'](this)">
                 <icon>&#xf0e0;</icon>
                 E-Mail
@@ -243,7 +248,7 @@ function row_customer(data = null, edit) {
 }
 /** Item Row */
 function row_items(data = null, edit) {
-    var _a, _b, _c, _d, _e, _f;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
     const init = q('#body>table').length ? false : true;
     const table = (_a = q('#body>table')[0]) !== null && _a !== void 0 ? _a : document.createElement('table');
     const ek = edit ? 'contenteditable="true"' : '';
@@ -268,7 +273,7 @@ function row_items(data = null, edit) {
             <td ${ek}>${(_d = data === null || data === void 0 ? void 0 : data.brand) !== null && _d !== void 0 ? _d : ''}</td>
             <td ${ek}>${(_e = data === null || data === void 0 ? void 0 : data.model) !== null && _e !== void 0 ? _e : ''}</td>
             <td ${ek}>${(_f = data === null || data === void 0 ? void 0 : data.serial) !== null && _f !== void 0 ? _f : ''}</td>
-            <td ${ek}>${(data === null || data === void 0 ? void 0 : data.belonged_customer_id) ? `<a href="/user/${data === null || data === void 0 ? void 0 : data.belonged_customer_id}">User</a>` : 'Unknown'}</td>
+            <td ${ek}>${((_g = data === null || data === void 0 ? void 0 : data.customer) === null || _g === void 0 ? void 0 : _g.name) ? `<a href="/customer?id=${(_h = data === null || data === void 0 ? void 0 : data.customer) === null || _h === void 0 ? void 0 : _h.id}">${(_j = data === null || data === void 0 ? void 0 : data.customer) === null || _j === void 0 ? void 0 : _j.name}</a>` : 'Unknown'}</td>
             <td><div>
                 <button>&#xe2b4;</button>
                 ${edit ? `<button onclick="action['save_item'](this)">+</button>` :
@@ -502,6 +507,8 @@ const action = {
         if (res.data != null) {
             document.body.classList.remove('login');
             setCookie('session', res.data.id, 7);
+            employee_id = res.data.user_id;
+            console.log('NEW ID', employee_id);
             load();
         }
     },
