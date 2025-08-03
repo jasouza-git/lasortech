@@ -248,7 +248,7 @@ function row_customer(data = null, edit) {
 }
 /** Item Row */
 function row_items(data = null, edit) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const init = q('#body>table').length ? false : true;
     const table = (_a = q('#body>table')[0]) !== null && _a !== void 0 ? _a : document.createElement('table');
     const ek = edit ? 'contenteditable="true"' : '';
@@ -273,7 +273,7 @@ function row_items(data = null, edit) {
             <td ${ek}>${(_d = data === null || data === void 0 ? void 0 : data.brand) !== null && _d !== void 0 ? _d : ''}</td>
             <td ${ek}>${(_e = data === null || data === void 0 ? void 0 : data.model) !== null && _e !== void 0 ? _e : ''}</td>
             <td ${ek}>${(_f = data === null || data === void 0 ? void 0 : data.serial) !== null && _f !== void 0 ? _f : ''}</td>
-            <td ${ek}>${((_g = data === null || data === void 0 ? void 0 : data.customer) === null || _g === void 0 ? void 0 : _g.name) ? `<a href="/customer?id=${(_h = data === null || data === void 0 ? void 0 : data.customer) === null || _h === void 0 ? void 0 : _h.id}">${(_j = data === null || data === void 0 ? void 0 : data.customer) === null || _j === void 0 ? void 0 : _j.name}</a>` : 'Unknown'}</td>
+            <td ${ek}>${((_g = data === null || data === void 0 ? void 0 : data.customer) === null || _g === void 0 ? void 0 : _g.name) ? `<a href="/customer?id=${(_h = data === null || data === void 0 ? void 0 : data.customer) === null || _h === void 0 ? void 0 : _h.id}" onclick="action['customer_info'](event, '${(_j = data === null || data === void 0 ? void 0 : data.customer) === null || _j === void 0 ? void 0 : _j.id}')">${(_k = data === null || data === void 0 ? void 0 : data.customer) === null || _k === void 0 ? void 0 : _k.name}</a>` : 'Unknown'}</td>
             <td><div>
                 <button>&#xe2b4;</button>
                 ${edit ? `<button onclick="action['save_item'](this)">+</button>` :
@@ -381,10 +381,16 @@ async function load(quick = false, page = 0) {
         location.reload();
         return;
     }
+    // 1.2 Request data
+    const req = ['employee', 'customer'].includes(sub[0]) ? {
+        fetch: sub[0] + 's',
+        ids: [new URLSearchParams(window.location.search).get('id')],
+        session_id: getCookie('session')
+    } : Object.assign({ query: sub[0], mode: sub[1], session_id: getCookie('session') }, (q('#find_text')[0].value.length ? { keywords: q('#find_text')[0].value.split(' ') } : {}));
     // 2. Get number of datas for proper page identification
-    const count = (await api(Object.assign(Object.assign({ query: sub[0], mode: sub[1], session_id: getCookie('session') }, (q('#find_text')[0].value.length ? { keywords: q('#find_text')[0].value.split(' ') } : {})), { get_count_only: true }))).data.count;
+    const count = ['employee', 'customer'].includes(sub[0]) ? 1 : (await api(Object.assign(Object.assign({}, req), { get_count_only: true }))).data.count;
     // 3. Request to API
-    const datas = await api(Object.assign({ query: sub[0], mode: sub[1], session_id: getCookie('session'), page, count_per_page: perpage }, (q('#find_text')[0].value.length ? { keywords: q('#find_text')[0].value.split(' ') } : {})));
+    const datas = await api(Object.assign(Object.assign({}, req), { page, count_per_page: perpage }));
     const d1 = Number(new Date());
     // 4. Load content
     if (!quick && d1 - d0 < 500)
@@ -597,6 +603,18 @@ const action = {
             await action['load_order_customer'](c);
         }
     },
+    'employee_info': async (event, id) => {
+        event.preventDefault();
+        history.pushState({}, '', `/employee?id=${id}`);
+        path = ['employee'];
+        load();
+    },
+    'customer_info': async (event, id) => {
+        event.preventDefault();
+        history.pushState({}, '', `/customer?id=${id}`);
+        path = ['customer'];
+        load();
+    },
     /* ----- CUSTOMERS ----- */
     'delete_customer': async (dom) => {
         const p = dom.parentNode.parentNode.parentNode;
@@ -766,7 +784,7 @@ const action = {
             dom.innerHTML = /*html*/ `
                 <div class="state" data="${state.state_code}"></div>
                 <span class="date">${dateFormat(state.create_at)}</span>
-                ${state.employee_id ? html `<a href="/employee?id=${state.employee_id}" class="employee">Employee</a>` : ''}
+                ${state.employee_id ? html `<a href="/employee?id=${state.employee_id}" class="employee" onclick="action['employee_info'](event, '${state.employee_id}')">Employee</a>` : ''}
                 ${state.reason || typeof state.amount == 'number' ? html `<p>${(_a = state.reason) !== null && _a !== void 0 ? _a : `Customer paid ${state.amount.toLocaleString('en-PH', {
                 style: 'currency',
                 currency: 'PHP',
@@ -853,6 +871,7 @@ q('#side>button', x => x.addEventListener('click', () => {
     if (!x.classList.contains('on'))
         p = cs.length ? cs[0].getAttribute('data').split('/') : null;
     if (p != null) {
+        history.pushState({}, '', `/${p.join('/')}`);
         path = p;
         load();
     }
@@ -886,6 +905,10 @@ q('#login>div:last-child>button', (x, n) => x.addEventListener('click', () => {
     x.classList.add('on');
     q('#login>div')[n].classList.add('on');
 }));
+window.addEventListener('popstate', (event) => {
+    path = location.pathname.split('/').slice(1);
+    load();
+});
 /** Onloaded */
 let employee_id = '';
 onload = async function () {

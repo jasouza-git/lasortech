@@ -285,7 +285,7 @@ function row_items(data:{
             <td ${ek}>${data?.brand??''}</td>
             <td ${ek}>${data?.model??''}</td>
             <td ${ek}>${data?.serial??''}</td>
-            <td ${ek}>${data?.customer?.name? `<a href="/customer?id=${data?.customer?.id}">${data?.customer?.name}</a>`:'Unknown'}</td>
+            <td ${ek}>${data?.customer?.name? `<a href="/customer?id=${data?.customer?.id}" onclick="action['customer_info'](event, '${data?.customer?.id}')">${data?.customer?.name}</a>`:'Unknown'}</td>
             <td><div>
                 <button>&#xe2b4;</button>
                 ${
@@ -389,6 +389,7 @@ async function load(quick=false, page:number=0) {
     if (Number.isNaN(perpage)) perpage = 10;
     if (!quick) document.body.classList.add('loading');
     const sub:string[] = [path.length > 0 && path[0].length ? path[0] : 'orders', path.length > 1 && path[1].length ? path[1] : 'all'];
+
     path = sub;
     // 1.1 Maybe logout?
     if (sub[0] == 'logout') {
@@ -396,22 +397,24 @@ async function load(quick=false, page:number=0) {
         location.reload();
         return;
     }
-    // 2. Get number of datas for proper page identification
-    const count = (await api<{count:number}>({
+    // 1.2 Request data
+    const req = ['employee','customer'].includes(sub[0]) ? {
+        fetch: sub[0]+'s',
+        ids: [new URLSearchParams(window.location.search).get('id')],
+        session_id: getCookie('session')
+    } : {
         query:sub[0],
         mode:sub[1],
         session_id:getCookie('session'),
-        ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {}),
-        get_count_only:true
-    })).data.count;
+        ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {})
+    };
+    // 2. Get number of datas for proper page identification
+    const count = ['employee','customer'].includes(sub[0]) ? 1 : (await api<{count:number}>({...req, get_count_only:true})).data.count;
     // 3. Request to API
     const datas = await api<any[]>({
-        query:sub[0],
-        mode:sub[1],
-        session_id:getCookie('session'),
+        ...req,
         page,
-        count_per_page: perpage,
-        ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {})
+        count_per_page: perpage
     });
     const d1 = Number(new Date());
     // 4. Load content
@@ -614,6 +617,18 @@ const action = {
             await action['load_order_customer'](c);
         }
     },
+    'employee_info': async (event, id) => {
+        event.preventDefault();
+        history.pushState({},'',`/employee?id=${id}`);
+        path = ['employee'];
+        load();
+    },
+    'customer_info': async (event, id) => {
+        event.preventDefault();
+        history.pushState({},'',`/customer?id=${id}`);
+        path = ['customer'];
+        load();
+    },
     /* ----- CUSTOMERS ----- */
     'delete_customer': async (dom) => {
         const p = dom.parentNode.parentNode.parentNode;
@@ -790,7 +805,7 @@ const action = {
             dom.innerHTML = /*html*/`
                 <div class="state" data="${state.state_code}"></div>
                 <span class="date">${dateFormat(state.create_at)}</span>
-                ${state.employee_id ? html`<a href="/employee?id=${state.employee_id}" class="employee">Employee</a>` : ''}
+                ${state.employee_id ? html`<a href="/employee?id=${state.employee_id}" class="employee" onclick="action['employee_info'](event, '${state.employee_id}')">Employee</a>` : ''}
                 ${state.reason || typeof state.amount == 'number' ? html`<p>${state.reason??`Customer paid ${state.amount.toLocaleString('en-PH', {
                     style: 'currency',
                     currency: 'PHP',
@@ -874,6 +889,7 @@ q('#side>button', x => x.addEventListener('click', () => {
     });
     if (!x.classList.contains('on')) p = cs.length ? cs[0].getAttribute('data').split('/') : null
     if (p != null) {
+        history.pushState({},'',`/${p.join('/')}`);
         path = p;
         load();
     }
@@ -904,6 +920,11 @@ q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
     x.classList.add('on');
     q('#login>div')[n].classList.add('on');
 }));
+
+window.addEventListener('popstate', (event) => {
+    path = location.pathname.split('/').slice(1);
+    load();
+});
 
 /** Onloaded */
 let employee_id = '';
