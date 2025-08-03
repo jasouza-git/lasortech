@@ -508,7 +508,6 @@ const action = {
             document.body.classList.remove('login');
             setCookie('session', res.data.id, 7);
             employee_id = res.data.user_id;
-            console.log('NEW ID', employee_id);
             load();
         }
     },
