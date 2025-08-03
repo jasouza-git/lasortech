@@ -54,6 +54,17 @@ body
         border-radius: 0.25*$u 0 0 0
         box-shadow: inset 0 0 0.25*$u #0005
         transition: opacity $t $t
+::-webkit-scrollbar
+  width: 10px
+::-webkit-scrollbar-track
+  background: none
+  padding: 2px
+::-webkit-scrollbar-thumb
+  background: #888
+  border-radius: 5px
+  width: 2px
+::-webkit-scrollbar-thumb:hover
+  background: #555
 
 /* ----- HEAD ----- */
 body::before, #head::after
@@ -126,6 +137,23 @@ body::before, #head::after
     p
         font-weight: bold
         font-size: 0.3*$u
+        span
+            float: right
+            opacity: 0.5
+            transition: opacity $t
+            &:not(.all)
+                font-size: 0.25*$u
+                line-height: 0.3*$u
+            &.all
+                font-size: 0.2*$u
+                padding: 0.05*$u
+                border-radius: 0.1*$u
+                background-color: #fff0
+                cursor: pointer
+                &:hover
+                    background-color: #fff3
+                &.on
+                    opacity: 1
     button
         font-size: 0.3*$u
         border: 0.01*$u solid #555
@@ -196,6 +224,20 @@ body::before, #head::after
         &:active
             background-color: #222
             color: #ccc
+    &:empty
+        text-align: center
+        &::before
+            content: '\f49e'
+            font: $u 'FontAwesome'
+            margin-top: auto
+            opacity: .25
+        &::after
+            content: 'Empty'
+            margin-bottom: auto
+            margin-top: 0.1*$u
+            font-size: 0.4*$u
+            font-weight: bold
+            opacity: .25
 
 /* ----- FIND ----- */
 #find
@@ -218,7 +260,7 @@ body::before, #head::after
         grid-area: 1 / 1 / span 1 / span 5
         height: 0.5*$u
         border: 0.01*$u solid #aaa
-        border-radius: 0.1*$u 0.1*$u 0 0
+        border-radius: 0.1*$u 0 0.1*$u 0.1*$u
         padding: 0.125*$u
         font-size: 0.25*$u
     &>div
@@ -305,6 +347,8 @@ table
         display: flex
     tbody:nth-child(2) tr.empty
         display: table-row
+    a
+        color: inherit
     button
         width: 100%
         height: 100%
@@ -388,6 +432,8 @@ table
             background-color: #666F
             color: #fff
     div
+        position: relative
+        margin-left: 0.4*$u
         border-radius: 0.55*$u
         border: 0.01*$u solid #555
         color: #555
@@ -395,16 +441,6 @@ table
         width: 1.65*$u
         text-align: center
         padding-right: $u
-    button + div
-        position: relative
-        margin-left: 0.4*$u
-        &::before
-            content: ''
-            position: absolute
-            left: -0.2*$u
-            top: 0
-            height: 0.55*$u
-            border-left: 0.01*$u solid #555
         &::after
             content: 'per page'
             position: absolute
@@ -415,6 +451,14 @@ table
             border: 0.01*$u solid #555
             background-color: #ccc
             border-radius: 0 0.55*$u 0.55*$u 0
+    button + div
+        &::before
+            content: ''
+            position: absolute
+            left: -0.2*$u
+            top: 0
+            height: 0.55*$u
+            border-left: 0.01*$u solid #555
 
 /* ----- COMPONENTS ----- */
 .card
@@ -445,7 +489,7 @@ table
         background-color: #ddd
         box-shadow: 0 0 0.1*$u #333
         border-radius: 0 0 0.1*$u 0
-        overflow: hidden
+        overflow: auto
         z-index: 1
         h1, h2
             margin: 0

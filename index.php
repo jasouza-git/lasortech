@@ -51,14 +51,15 @@ HTML);
         <div id="side">
             <?php
                 foreach ($config->navigate as $name => $options) {
-                    echo '<p>' . $name . ':</p>';
-                    echo '<button data="' . strtolower($name) . '/all">All</button>';
+                    echo '<p>' . $name . ':<span class="all" data="' . strtolower($name) . '">ALL</span></p>';
+                    //echo '<button data="' . strtolower($name) . '/all">All</button>';
                     foreach ($options as $index => $value) {
                         echo '<button data="' . strtolower($name) . '/' . strtolower($value) . '">' . $value . '</button>';
                     }
                 }
             ?>
             <p>User: <span id="user_name"></span></p>
+            <button data="profile">Profile</button>
             <button data="logout">Logout</button>
         </div>
         <div id="head">

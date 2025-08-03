@@ -236,7 +236,7 @@ function row_customer(data:{
     if (data != null || edit) {
         const row = document.createElement('tbody');
         row.innerHTML = /*html*/`<tr ${data?.id ? `data="${data.id}"` : ''} ${edit ? 'class="edit"' : ''}>
-            <td ${ek}>${data?.name??''}</td>
+            <td ${ek}>${edit ? '' : html`<a href="/customer/${data?.id}" onclick="action['customer_info'](event, '${data?.id}')">${data?.name??''}<a>`}</td>
             <td ${ek}>${data?.contact_number??''}</td>
             <td ${ek}>${data?.email??''}</td>
             <td ${ek}>${data?.messenger_id??''}</td>
@@ -285,7 +285,7 @@ function row_items(data:{
             <td ${ek}>${data?.brand??''}</td>
             <td ${ek}>${data?.model??''}</td>
             <td ${ek}>${data?.serial??''}</td>
-            <td ${ek}>${data?.customer?.name? `<a href="/customer?id=${data?.customer?.id}" onclick="action['customer_info'](event, '${data?.customer?.id}')">${data?.customer?.name}</a>`:'Unknown'}</td>
+            <td ${ek}>${data?.customer?.name? `<a href="/customer/${data?.customer?.id}" onclick="action['customer_info'](event, '${data?.customer?.id}')">${data?.customer?.name}</a>`:'Unknown'}</td>
             <td><div>
                 <button>&#xe2b4;</button>
                 ${
@@ -344,6 +344,11 @@ async function pop(tag:string, title:string, msg:string, ops:string[]=[], def?:s
     remove();
     return [ops[num], inp.value];
 }
+/** Profile */
+function profile(data) {
+    console.log(data);
+    
+}
 
 /* ------ API REQUESTING ----- */
 /** API Response Type */
@@ -398,15 +403,16 @@ async function load(quick=false, page:number=0) {
         return;
     }
     // 1.2 Request data
+    const find = q('#find_text')[0].value.length ? q('#find_text')[0].value.split(' ') : [];
     const req = ['employee','customer'].includes(sub[0]) ? {
         fetch: sub[0]+'s',
-        ids: [new URLSearchParams(window.location.search).get('id')],
+        ids: [sub[1]],
         session_id: getCookie('session')
     } : {
         query:sub[0],
         mode:sub[1],
         session_id:getCookie('session'),
-        ...(q('#find_text')[0].value.length ? {keywords: q('#find_text')[0].value.split(' ')} : {})
+        ...(find.length ? {keywords: find} : {})
     };
     // 2. Get number of datas for proper page identification
     const count = ['employee','customer'].includes(sub[0]) ? 1 : (await api<{count:number}>({...req, get_count_only:true})).data.count;
@@ -430,11 +436,11 @@ async function load(quick=false, page:number=0) {
     if (datas.data != null) {
         if (sub[0] == 'orders') {
             for (const data of datas.data) q('#body')[0].appendChild(await card(data));
-            q('#body')[0].appendChild(newbutton);
+            if (!find.length) q('#body')[0].appendChild(newbutton);
         } else if (sub[0] == 'customers') {
             row_customer();
             datas.data.map(x=>row_customer(x));
-            q('#body')[0].appendChild(newbutton);
+            if (!find.length) q('#body')[0].appendChild(newbutton);
         } else if (sub[0] == 'items') {
             row_items();
             datas.data.map(x=>row_items(x));
@@ -458,6 +464,13 @@ async function load(quick=false, page:number=0) {
                 <p>Error code ${datas.errno}</p>
             </div>
         `);
+    }
+    if (sub[0] == 'customer') {
+        for (const data of datas.data[0].orders) {
+            data.customer = datas.data[0];
+            q('#body')[0].appendChild(await card(data));
+        }
+        q('#body')[0].appendChild(newbutton);
     }
     q('#tabs', x => x.innerHTML = /*html*/`
         ${Array(Math.ceil(count/perpage)).fill(0).map((_,x)=>/*html*/`
@@ -619,14 +632,14 @@ const action = {
     },
     'employee_info': async (event, id) => {
         event.preventDefault();
-        history.pushState({},'',`/employee?id=${id}`);
-        path = ['employee'];
+        history.pushState({},'',`/employee/${id}`);
+        path = ['employee', id];
         load();
     },
     'customer_info': async (event, id) => {
         event.preventDefault();
-        history.pushState({},'',`/customer?id=${id}`);
-        path = ['customer'];
+        history.pushState({},'',`/customer/${id}`);
+        path = ['customer', id];
         load();
     },
     /* ----- CUSTOMERS ----- */
@@ -802,10 +815,16 @@ const action = {
         });
         for (const state of states.data) {
             const dom = document.createElement('div');
+            let employee_name = 'Unknown Employee';
+            if (state.employee_id) employee_name = (await api({
+                get:'employees',
+                session_id:getCookie('session'),
+                ids:[state.employee_id]
+            })).data[0].name;
             dom.innerHTML = /*html*/`
                 <div class="state" data="${state.state_code}"></div>
                 <span class="date">${dateFormat(state.create_at)}</span>
-                ${state.employee_id ? html`<a href="/employee?id=${state.employee_id}" class="employee" onclick="action['employee_info'](event, '${state.employee_id}')">Employee</a>` : ''}
+                ${state.employee_id ? html`<a href="/employee/${state.employee_id}" class="employee" onclick="action['employee_info'](event, '${state.employee_id}')">${employee_name}</a>` : ''}
                 ${state.reason || typeof state.amount == 'number' ? html`<p>${state.reason??`Customer paid ${state.amount.toLocaleString('en-PH', {
                     style: 'currency',
                     currency: 'PHP',
@@ -877,24 +896,24 @@ q('#find_text')[0].onkeyup = q('#search')[0].click = () => load(true);
 /** Find filters */
 q('#side>button', x => x.addEventListener('click', () => {
     let p = x.getAttribute('data').split('/');
+    q('#side>button, #side p span.all', y => y.classList.remove('on'));
     x.classList.toggle('on');
-    const cs = [];
-    q('#side>button', y => {
-        if (x == y) return;
-        console.log(y);
-        const p2 = y.getAttribute('data').split('/');
-        let c = p[0] != p2[0] ? false : p[1] == 'all' ? x.classList.contains('on') : p2[1] == 'all' ? y.nextSibling.classList.contains('on') && y.nextSibling.nextSibling.classList.contains('on') : y.classList.contains('on');
-        if (y.classList.contains('on') != c) y.classList.toggle('on');
-        if (c) cs.push(y);
-    });
-    if (!x.classList.contains('on')) p = cs.length ? cs[0].getAttribute('data').split('/') : null
-    if (p != null) {
-        history.pushState({},'',`/${p.join('/')}`);
-        path = p;
+    history.pushState({},'',`/${p.join('/')}`);
+    path = p;
+    load();
+}));
+q('#side p span.all', x => x.addEventListener('click', () => {
+    let data = x.getAttribute('data');
+    x.classList.toggle('on');
+    let on = x.classList.contains('on');
+    q(`#side>button, #side p span.all:not([data="${data}"])`,y => y.classList.remove('on'));
+    if (on) q(`#side>button[data^="${data}"]`, y => y.classList.add('on'));
+    if (x.classList.contains('on')) {
+        history.pushState({},'',`/${data}/all`);
+        path = [data, 'all'];
         load();
     }
-    console.log(path);
-}))
+}));
 
 /** Automatic next element on enter */
 q('#login input', x => x.addEventListener('keyup', e => {
