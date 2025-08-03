@@ -495,7 +495,7 @@ class DB_QUERY extends DB {
      *      - working: bool,
      *      - update_at: string,
      *      - create_at: string,
-     *      - order: <Order Data>[]
+     *      - orders: <Order Data>[]
      */
     public function fetch_employees(array $data) {
         $data = parameter([
@@ -509,24 +509,31 @@ class DB_QUERY extends DB {
             $ids,
             fn($placeholders) => $sql = [
                 "sql" => <<<SQL
-                    SELECT DISTINCT 
-                        e.*,
-                        u.email,
-                        o.id AS order_id
+                    SELECT 
+                        e.*, 
+                        u.email, 
+                        GROUP_CONCAT(DISTINCT o.id ORDER BY o.id SEPARATOR ',') AS order_ids
                     FROM employees e
                     JOIN users u ON u.id = e.id
                     LEFT JOIN state_processings sp ON e.id = sp.employee_id
                     LEFT JOIN procedures p ON sp.state_id = p.id
                     LEFT JOIN orders o ON p.order_id = o.id
                     WHERE e.id IN ($placeholders)
-                    ORDER BY FIELD(e.id, $placeholders)
+                    GROUP BY e.id
+                    ORDER BY FIELD(e.id, $placeholders);
                 SQL,
                 "placeholder_count" => 2
             ]
         );
 
         $employees = $this->fetch($combined);
-        $order_ids = array_filter(array_map(fn($employee) => $employee["order_id"], $employees));
+        $order_ids = [];
+        foreach ($employees as $employee) {
+            if ($employee["order_ids"]) {
+                $order_ids = array_merge($order_ids, explode(",", $employee["order_ids"]));
+            }
+        }
+
         $orders = $this->fetch_orders([
             "ids" => $order_ids
         ]);
@@ -534,12 +541,15 @@ class DB_QUERY extends DB {
         $orders = array_column($orders,null, "id");
 
         foreach ($employees as &$employee) {
-            if ($employee['order_id']) {
-                $employee['order'] = $orders[$employee['order_id']];
-                unset($employee['order_id']);
+            if ($employee['order_ids']) {
+                $employee['orders'] = [];
+                foreach (explode(',', $employee['order_ids']) as $order_id) {
+                    $employee['orders'][] = $orders[$order_id];
+                }
+                unset($employee['order_ids']);
             } else {
-                $employee['order'] = [];
-                unset($employee['order_id']);
+                $employee['orders'] = [];
+                unset($employee['order_ids']);
             }
             $employee['working'] = (bool)$employee['working'];
         }
