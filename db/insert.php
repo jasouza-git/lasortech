@@ -126,7 +126,32 @@ class DB_INSERT extends DB {
      * @param array $data:
      *      - order_id: string
      *      - state_code: int (0~7)
-     *      - other paramters depends on state type
+     *      - other paramters depends on state code:
+     *          - 0(waiting): 
+     *              no extra parameters
+     * 
+     *          - 1(processing): 
+     *              - employee_id: string
+     *              - reason?: string
+     * 
+     *          - 2(done): 
+     *              no extra parameters
+     * 
+     *          - 3(finished): 
+     *              no extra parameters
+     * 
+     *          - 4(incomplete):
+     *              - reason?: string
+     * 
+     *          - 5(user_cancelled):
+     *              - reason?: string
+     * 
+     *          - 6(refunded): 
+     *              no extra parameters
+     * 
+     *          - 7(paid):
+     *              - amount: real
+     * 
      * @return array:
      *      - id: string
      *      - order_id: string
