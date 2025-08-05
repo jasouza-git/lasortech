@@ -102,6 +102,7 @@ class DB_INSERT extends DB {
      *      - model?: string
      *      - name?: string
      *      - serial?: string
+     *      - description?: string
      * @return array:
      *      - id: string
      *      - belonged_customer_id: string
@@ -109,6 +110,7 @@ class DB_INSERT extends DB {
      *      - model?: string
      *      - name?: string
      *      - serial?: string
+     *      - description?: string
      */
     public function item(array $data) {
         $item = parameter([
@@ -116,7 +118,8 @@ class DB_INSERT extends DB {
             "brand?" => "string",
             "model?" => "string",
             "name?" => "string",
-            "serial?" => "string"
+            "serial?" => "string",
+            "description?" => "string"
         ], $data);
         $combined = build_insert_sql($item, "items");
         return $this->insert($combined);

@@ -40,7 +40,8 @@ class DB_UPDATE extends DB {
             "brand?" => "string",
             "model?" => "string",
             "name?" => "string",
-            "serial?" => "string"
+            "serial?" => "string",
+            "description?" => "string"
         ], $data);
 
         $combined = build_update_sql($data['id'], $item, "items");

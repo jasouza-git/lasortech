@@ -53,6 +53,7 @@ CREATE TABLE `items` (
 	`model` varchar(64),
 	`name` varchar(64),
 	`serial` varchar(64),
+	`description` text,
 	`update_at` timestamp(6) NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP(6),
 	`create_at` timestamp(6) NOT NULL DEFAULT (now()),
 	CONSTRAINT `items_id` PRIMARY KEY(`id`)
