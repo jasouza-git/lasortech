@@ -30,10 +30,12 @@ html
 body
     margin: 1.1*$u+$h 0 0 3*$u
     height: calc(100% - 3.7*$u)
+    width: calc(100vw - 3*$u)
     font-family: LeagueSpartan
     color: #fff
     background-color: #111
     overflow: hidden scroll
+    transition: margin $t
 
     &>div
         transition: opacity $t $t
@@ -53,7 +55,7 @@ body
         z-index: -1
         border-radius: 0.25*$u 0 0 0
         box-shadow: inset 0 0 0.25*$u #0005
-        transition: opacity $t $t
+        transition: opacity $t $t, width $t, right $t
 ::-webkit-scrollbar
   width: 10px
 ::-webkit-scrollbar-track
@@ -89,10 +91,11 @@ body::before, #head::after
     width: calc(100% - 3*$u)
     height: $u
     display: grid
-    d-template-columns: auto
+    //d-template-columns: auto
     //grid-template-columns: 2*$u auto
     grid-template-rows: 1fr 1fr
-    z-index: 4
+    z-index: 3
+    transition: width $t, right $t
     &::after
         position: absolute
         z-index: -1
@@ -134,6 +137,7 @@ body::before, #head::after
     padding: 0.1*$u
     overflow: hidden auto
     z-index: 2
+    transition: left $t
     p
         font-weight: bold
         font-size: 0.3*$u
@@ -182,7 +186,7 @@ body::before, #head::after
     top: 0
     width: 3*$u
     height: $u
-    z-index: 3
+    z-index: 4
     transition: $t
 
 /* ---- BODY ----- */
@@ -256,6 +260,7 @@ body::before, #head::after
     margin-bottom: 0.1*$u
     color: #555
     z-index: 3
+    transition: opacity $t $t, width $t, right $t
     &>input
         grid-area: 1 / 1 / span 1 / span 5
         height: 0.5*$u
@@ -379,7 +384,7 @@ table
     box-shadow: inset 0 0 0.25*$u #0005
     opacity: 0
     pointer-events: none
-    transition: opacity $t
+    transition: opacity $t, width $t, right $t
     z-index: 2
 
 /* ----- BOTTOM TABS ----- */
@@ -392,7 +397,7 @@ table
     display: flex
     padding: 0.1*$u
     justify-content: center
-    transition: opacity $t 2*$t
+    transition: opacity $t 2*$t, width $t, right $t
     z-index: 2
     &::before
         content: ''
@@ -405,7 +410,7 @@ table
         z-index: -1
         border-radius: 0.25*$u 0 0 0
         box-shadow: inset 0 0 0.25*$u #0005
-        transition: opacity $t $t
+        transition: opacity $t $t, width $t, right $t
         mask-image: linear-gradient(to bottom, black $h, transparent 0.35*$u+$h, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
         -webkit-mask-image: linear-gradient(to bottom, black $h, transparent 0.35*$u+$h, transparent calc(100% - $u), #000E calc(100% - 0.65*$u))
         pointer-events: none
@@ -464,7 +469,7 @@ table
 .card
     position: relative
     display: grid
-    grid-template-columns: auto 5*$u
+    grid-template-columns: auto 4*$u
     grid-template-rows: auto auto 0.5*$u
     margin: 0.25*$u
     width: calc(100% - 0.5*$u)
@@ -498,7 +503,9 @@ table
             line-height: 0.75*$u
             white-space: nowrap
         h1
+            overflow: hidden
             grid-area: 1 / 1
+            text-overflow: ellipsis
         h2
             grid-area: 1 / 2
             text-align: right
@@ -538,6 +545,7 @@ table
             grid-area: 2 / 1
             padding: 0.1*$u
         a
+            color: inherit
             padding: 0 0.1*$u
             &::before, &::after
                 display: inline-block
@@ -626,16 +634,17 @@ table
             transition: opacity $t
         div
             grid-area: 1 / 1
+            margin-right: $u
         p, h1
             margin: 0
             padding: 0 0.2*$u
             font-size: 0.25*$u
             line-height: 0.5*$u
-            white-space: nowrap
             color: #fff
             flex-grow: 1
         h1
             text-align: right
+            flex-shrink: 1
         button
             border: 0
             background: none
@@ -711,8 +720,6 @@ table
     &[data].order
         &>div:nth-child(4)::before
             opacity: 1
-                
-
 
 /* ----- LOGIN/SIGNUP ----- */
 #login
@@ -900,6 +907,7 @@ table
                     border-right-color: #841
                 &::before
                     border-color: #a63
+
 /* ----- BEFORE LOADED ----- */
 body.load
     overflow: hidden
@@ -941,3 +949,20 @@ body.login
             bottom: calc(37.5% - 50vw + 0.25*$u)
             width: calc(100% - 0.5*$u)
             height: calc(100vw - 0.5*$u)
+@media screen and (max-width: 700px)
+    body
+        margin-left: 0
+        width: 100vw
+    body::after, #find, #head, #loader, #tabs, #tabs::before
+        width: 100%
+    #side
+        left: -3*$u
+    #head_name
+        display: none
+    body.side
+        margin-left: 3*$u
+        width: 100vw
+        #side
+            left: 0
+        &::after, #find, #head, #loader, #tabs, #tabs::before
+            right: -3*$u

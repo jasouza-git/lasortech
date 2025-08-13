@@ -88,7 +88,6 @@ function generateKey() {
   return result.join('-');
 }
 
-
 /* ----- COMPONENT GENERATOR ----- */
 /** Order Card */
 async function card(data:any|null=null, edit?:boolean) {
@@ -106,7 +105,7 @@ async function card(data:any|null=null, edit?:boolean) {
     if (data) out.setAttribute('data', data.id);
     out.innerHTML = /*html*/`
         <div>
-            <h1>${data?data.id.slice(0,24)+'...':'[ NEW ORDER ]'}</h1>
+            <h1>${data?data.id/*data.id.slice(0,24)+'...'*/:'[ NEW ORDER ]'}</h1>
             <h2>
                 <span>${dateFormat(data?.update_at)}</span> /
                 <span>${dateFormat(data?.create_at)}</span>
@@ -132,7 +131,7 @@ async function card(data:any|null=null, edit?:boolean) {
         </div>
         <div ${data?`data="${data.customer.id}"` : ''}>
             <select class="edit" onchange="action['load_order_customer'](this)"></select>
-            <h1 class="noedit">${data?html`${data.customer.name}`:''}</h1>
+            <a href="/customer/${data.customer.id}" onclick="action['customer_info'](event, '${data.customer.id}')"><h1 class="noedit">${data?html`${data.customer.name}`:''}</h1></a>
             <p>${data?html`${data.customer.description??''}`:''}</p>
             <a class="cn">${data?html`${data.customer.contact_number}`:''}</a>
             <a class="em">${data?html`${data.customer.email}`:''}</a>
@@ -444,7 +443,7 @@ async function load(quick=false, page:number=0) {
         } else if (sub[0] == 'items') {
             row_items();
             datas.data.map(x=>row_items(x));
-        } else {
+        } else if (sub[0] == 'employees') {
             for (const data of datas.data) row_employee(data as {
                 id: string 
                 name: string,
@@ -466,6 +465,8 @@ async function load(quick=false, page:number=0) {
         `);
     }
     if (sub[0] == 'customer') {
+        row_customer();
+        row_customer(datas.data[0]);
         for (const data of datas.data[0].orders) {
             data.customer = datas.data[0];
             q('#body')[0].appendChild(await card(data));
@@ -538,6 +539,7 @@ const action = {
     'login': async (dom) => {
         const email = q('#login .login>[name=email]')[0].value,
             pass = q('#login .login>[name=pass]')[0].value;
+        console.log(await sha256(pass));
         if (!email.length) throw pop('error', 'Missing data', 'Please enter email!');
         if (!pass.length) throw pop('error', 'Missing data', 'Please enter password!');
         dom.innerHTML = 'Logging in...';
@@ -938,6 +940,10 @@ q('#login>div:last-child>button', (x,n) => x.addEventListener('click', () => {
     q('#login>div.on,#login>div:last-child>button.on', y=>y.classList.remove('on'));
     x.classList.add('on');
     q('#login>div')[n].classList.add('on');
+}));
+
+q('#logo', x => x.addEventListener('click', () => {
+    document.body.classList.toggle('side');
 }));
 
 window.addEventListener('popstate', (event) => {
